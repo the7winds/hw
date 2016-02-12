@@ -1,6 +1,6 @@
 package ru.spbau.mit;
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Supplier;
 
 /**
@@ -47,12 +47,14 @@ public class LazyFactory {
 
     public static <T> Lazy<T> createLazyMultithreadLockFree(Supplier<T> f) {
         return new Lazy<T>() {
-            private AtomicReference<T> res = new AtomicReference<>(null);
+            private volatile T res;
 
             @Override
             public T get() {
-                res.compareAndSet(null, f.get());
-                return res.get();
+                AtomicReferenceFieldUpdater updater =
+                        AtomicReferenceFieldUpdater.newUpdater(this.getClass(), Object.class, "res");
+                updater.compareAndSet(this, null, f.get());
+                return res;
             }
         };
     }
