@@ -9,8 +9,7 @@ import java.util.Map;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Created by the7winds on 10.02.16.
@@ -20,44 +19,35 @@ public class LazyFactoryTest {
     // Monothread tests
 
     @Test
-    public void simpleTestLazyMonothread() {
-        Lazy<String> lazy = LazyFactory.createLazyMonothread (() -> "test");
+    public void TestLazyMonothread() {
+        Lazy<String> lazy = LazyFactory.createLazyMonothread(new Supplier<String>() {
+            private boolean called = false;
+            @Override
+            public String get() {
+                assertFalse(called);
+                called = true;
+                return "test";
+            }
+        });
 
         String a = lazy.get();
         String b = lazy.get();
 
         assertEquals("test", a);
-        assertEquals("test", b);
         assertTrue(a == b);
     }
 
     @Test
     public void nullTestLazyMonothread() {
-        assertTrue(LazyFactory.createLazyMonothread(() -> null).get() == null);
-    }
-
-    @Test
-    public void countTestMonothread() {
-        Supplier<String> f = new Supplier<String>() {
+        assertNull(LazyFactory.createLazyMonothread(new Supplier<String>() {
             private boolean called = false;
             @Override
             public String get() {
-                if (!called) {
-                    called = true;
-                    return "ok";
-                } else {
-                    return "failed";
-                }
+                assertFalse(called);
+                called = true;
+                return null;
             }
-        };
-
-        Lazy<String> lazy = LazyFactory.createLazyMonothread(f);
-
-        String a = lazy.get();
-        String b = lazy.get();
-
-        assertEquals("ok", a);
-        assertTrue(a == b);
+        }).get());
     }
 
     @Test
@@ -71,16 +61,11 @@ public class LazyFactoryTest {
 
         asked.x = true;
         String a = lazy.get();
-        String b = lazy.get();
-
-        assertEquals("test", a);
-        assertEquals("test", b);
-        assertTrue(a == b);
     }
 
     // Multithread tests
 
-    private class Wrapper<T> {
+    private static class Wrapper<T> {
         public volatile T x;
 
         public Wrapper(T a) {
