@@ -153,7 +153,7 @@ public class LazyFactoryTest {
                     }
                     return null;
                 }).forEach(t -> {
-            assertEquals(t, res);
+            assertEquals(res, t);
             assertTrue(t == res);
         });
     }
