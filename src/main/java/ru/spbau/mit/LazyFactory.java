@@ -1,6 +1,5 @@
 package ru.spbau.mit;
 
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Supplier;
 
 /**
@@ -25,7 +24,7 @@ public class LazyFactory {
         };
     }
 
-    public static <T> Lazy<T> createLazyMultithread(Supplier<T> f) {
+    public static <T> Lazy<T> createLazyMultithread(final Supplier<T> f) {
         return new Lazy<T>() {
             private volatile boolean called = false;
             private volatile T res;
@@ -35,8 +34,8 @@ public class LazyFactory {
                 if (!called) {
                     synchronized (this) {
                         if (!called) {
-                            called = true;
                             res = f.get();
+                            called = true;
                         }
                     }
                 }
@@ -46,17 +45,6 @@ public class LazyFactory {
     }
 
     public static <T> Lazy<T> createLazyMultithreadLockFree(Supplier<T> f) {
-        return new Lazy<T>() {
-            private volatile T res;
-
-            @Override
-            public T get() {
-                AtomicReferenceFieldUpdater updater =
-                        AtomicReferenceFieldUpdater.newUpdater(this.getClass(), Object.class, "res");
-                updater.compareAndSet(this, null, f.get());
-                return res;
-            }
-        };
+        return new LazyLockFree<T>(f);
     }
-
 }
