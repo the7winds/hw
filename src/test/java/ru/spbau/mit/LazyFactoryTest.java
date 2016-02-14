@@ -56,7 +56,8 @@ public class LazyFactoryTest {
         String a = lazy.get();
         String b = lazy.get();
 
-        assertTrue("ok".equals(a) && a == b);
+        assertEquals("ok", a);
+        assertTrue(a == b);
     }
 
     @Test
