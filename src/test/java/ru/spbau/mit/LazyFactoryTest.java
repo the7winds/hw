@@ -40,14 +40,14 @@ public class LazyFactoryTest {
     @Test
     public void nullTestLazyMonothread() {
         Lazy<String> lazy = LazyFactory.createLazyMonothread(new Supplier<String>() {
-                                             private boolean called = false;
-                                             @Override
-                                             public String get() {
-                                                 assertFalse(called);
-                                                 called = true;
-                                                 return null;
-                                             }
-                                         });
+            private boolean called = false;
+            @Override
+            public String get() {
+                assertFalse(called);
+                called = true;
+                return null;
+            }
+        });
         assertNull(lazy.get());
         assertNull(lazy.get());
     }
