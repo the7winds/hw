@@ -43,17 +43,19 @@ public final class SecondPartTasks {
             }
         }
 
-        int limit = 1000;
+        int limit = 100000;
         double r = 1;
 
         return (double) new Random().ints()
                 .limit(limit)
                 .mapToObj(x -> {
                     Random random = new Random(x);
-                    return new Point(random.nextDouble(), random.nextDouble());
+                    return new Point(Math.pow(-1, random.nextInt()) * random.nextDouble(),
+                            Math.pow(-1, random.nextInt()) * random.nextDouble());
                 }).reduce(0,
-                        (Integer cnt, Point point) -> Math.pow(point.x, 2) + Math.pow(point.x, 2) <= r * r ? ++cnt : cnt,
-                        (s1, s2) -> s1 + s2) / limit;
+                        (Integer cnt, Point point) -> Math.pow(point.x, 2) + Math.pow(point.y, 2) <= r * r ? ++cnt : cnt,
+                        (s1, s2) -> s1 + s2
+                ) / limit;
     }
 
 

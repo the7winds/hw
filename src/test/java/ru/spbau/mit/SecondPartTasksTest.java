@@ -73,7 +73,7 @@ public class SecondPartTasksTest {
 
     @Test
     public void testPiDividedBy4() {
-        double eps = 0.1;
+        double eps = 0.01;
         assertTrue(Math.abs(Math.PI / 4 - SecondPartTasks.piDividedBy4()) < eps);
     }
 
