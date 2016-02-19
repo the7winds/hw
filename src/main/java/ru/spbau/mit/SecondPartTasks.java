@@ -73,7 +73,7 @@ public final class SecondPartTasks {
                 .map(stringListEntry -> new Pair<>(stringListEntry.getKey(),
                         stringListEntry.getValue().stream().collect(Collectors.joining()).length()))
                 .max((o1, o2) -> Integer.compare(o1.getValue(), o2.getValue()))
-                .get().getKey();
+                .orElse(new Pair<>(null, null)).getKey();
     }
 
     // Вы крупный поставщик продуктов. Каждая торговая сеть делает вам заказ в виде Map<Товар, Количество>.

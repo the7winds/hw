@@ -6,14 +6,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 public class SecondPartTasksTest {
 
@@ -70,6 +65,7 @@ public class SecondPartTasksTest {
 
         try {
             assertEquals(answer, SecondPartTasks.findQuotes(paths, "asd"));
+            assertEquals(Collections.emptyList(), SecondPartTasks.findQuotes(Collections.emptyList(), "asd"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -94,6 +90,7 @@ public class SecondPartTasksTest {
         authors.put("B", texts);
 
         assertEquals("A", SecondPartTasks.findPrinter(authors));
+        assertNull(SecondPartTasks.findPrinter(Collections.emptyMap()));
     }
 
     @Test
@@ -117,5 +114,6 @@ public class SecondPartTasksTest {
         sumOrder.put("C", 4);
 
         assertEquals(sumOrder, SecondPartTasks.calculateGlobalOrder(orders));
+        assertEquals(Collections.emptyMap(), SecondPartTasks.calculateGlobalOrder(Collections.emptyList()));
     }
 }
