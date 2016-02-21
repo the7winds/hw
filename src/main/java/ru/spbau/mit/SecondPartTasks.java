@@ -18,15 +18,14 @@ public final class SecondPartTasks {
     // Найти строки из переданных файлов, в которых встречается указанная подстрока.
     public static List<String> findQuotes(List<String> paths, CharSequence sequence) throws IOException {
         return paths.stream()
-                .map(s -> {
+                .flatMap(s -> {
                     try {
-                        return Files.readAllLines(Paths.get(s));
+                        return Files.lines(Paths.get(s));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                     return null;
-                }).flatMap(List::stream)
-                .filter(s -> s.contains(sequence))
+                }).filter(s -> s.contains(sequence))
                 .collect(Collectors.toList());
     }
 
@@ -50,8 +49,8 @@ public final class SecondPartTasks {
                 .limit(limit)
                 .mapToObj(x -> {
                     Random random = new Random(x);
-                    return new Point(Math.pow(-1, random.nextInt()) * random.nextDouble(),
-                            Math.pow(-1, random.nextInt()) * random.nextDouble());
+                    return new Point((random.nextBoolean() ? -1 : 1) * random.nextDouble(),
+                            (random.nextBoolean() ? -1 : 1) * random.nextDouble());
                 }).reduce(0,
                         (Integer cnt, Point point) -> Math.pow(point.x, 2) + Math.pow(point.y, 2) <= r * r ? ++cnt : cnt,
                         (s1, s2) -> s1 + s2
