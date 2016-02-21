@@ -19,7 +19,7 @@ public class LazyFactoryTest {
     // Monothread tests
 
     @Test
-    public void TestLazyMonothread() {
+    public void testLazyMonothread() {
         Lazy<String> lazy = LazyFactory.createLazyMonothread(new Supplier<String>() {
             private boolean called = false;
             @Override
@@ -34,7 +34,7 @@ public class LazyFactoryTest {
         String b = lazy.get();
 
         assertEquals("test", a);
-        assertTrue(a == b);
+        assertSame(a, b);
     }
 
     @Test
@@ -53,7 +53,7 @@ public class LazyFactoryTest {
     }
 
     @Test
-    public void LazinessTestLazyMonothread() {
+    public void lazinessTestLazyMonothread() {
         Wrapper<Boolean> asked = new Wrapper<>(false);
 
         Lazy<String> lazy = LazyFactory.createLazyMonothread (() -> {
@@ -141,7 +141,7 @@ public class LazyFactoryTest {
                     return null;
                 }).forEach(t -> {
             assertEquals(res, t);
-            assertTrue(t == res);
+            assertSame(t, res);
         });
     }
 
