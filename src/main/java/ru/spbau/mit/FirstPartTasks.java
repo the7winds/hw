@@ -2,6 +2,7 @@ package ru.spbau.mit;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -37,8 +38,7 @@ public final class FirstPartTasks {
         final int rating = 95;
         return albums.filter(album -> album.getTracks()
                 .stream()
-                .filter(track -> track.getRating() > rating)
-                .count() > 0)
+                .anyMatch(track -> track.getRating() > rating))
                 .sorted((o1, o2) -> o1.getName().compareTo(o2.getName()))
                 .collect(Collectors.toList());
     }
@@ -64,37 +64,27 @@ public final class FirstPartTasks {
                 .entrySet()
                 .stream()
                 .filter(albumLongEntry -> albumLongEntry.getValue() > 1)
-                .collect(Collectors.counting());
+                .count();
     }
 
     // Альбом, в котором максимум рейтинга минимален
     // (если в альбоме нет ни одного трека, считать, что максимум рейтинга в нем --- 0)
     public static Optional<Album> minMaxRating(Stream<Album> albums) {
-        return albums.collect(
-                Collectors.groupingBy(
-                        (Album album) -> album.getTracks()
-                                .stream()
-                                .sorted((o1, o2) -> o2.getRating() - o1.getRating())
-                                .findFirst().orElse(new Track(null, 0))
-                                .getRating()
-                )).entrySet()
-                .stream()
-                .sorted((o1, o2) -> o1.getKey() - o2.getKey())
-                .map(Map.Entry::getValue)
-                .flatMap(Collection::stream)
-                .findFirst();
+        return albums.min(Comparator.comparingInt((a) -> a.getTracks().stream()
+                .max((t1, t2) -> t1.getRating() - t2.getRating())
+                .orElse(new Track(null, 0))
+                .getRating()));
     }
 
     // Список альбомов, отсортированный по убыванию среднего рейтинга его треков (0, если треков нет)
     public static List<Album> sortByAverageRating(Stream<Album> albums) {
-        return albums.sorted((o2, o1) ->
-                o1.getTracks().stream()
-                        .mapToInt(Track::getRating)
-                        .sum() * o2.getTracks().size() -
-                        o2.getTracks().stream()
+        return albums.sorted(
+                Comparator.comparingDouble(
+                        (Album o) -> o.getTracks().stream()
                                 .mapToInt(Track::getRating)
-                                .sum() * o1.getTracks().size())
-                .collect(Collectors.toList());
+                                .average()
+                                .orElse(0)
+                ).reversed()).collect(Collectors.toList());
     }
 
     // Произведение всех чисел потока по модулю 'modulo'
