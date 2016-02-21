@@ -4,27 +4,29 @@ import javafx.util.Pair;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class SecondPartTasks {
 
     private SecondPartTasks() {}
 
     // Найти строки из переданных файлов, в которых встречается указанная подстрока.
-    public static List<String> findQuotes(List<String> paths, CharSequence sequence) throws IOException {
+    public static List<String> findQuotes(List<String> paths, CharSequence sequence) {
         return paths.stream()
                 .flatMap(s -> {
                     try {
-                        return Files.lines(Paths.get(s));
+                        if (s != null) {
+                            Path p = Paths.get(s);
+                            return Files.lines(p);
+                        }
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                    return null;
+                    return Stream.empty();
                 }).filter(s -> s.contains(sequence))
                 .collect(Collectors.toList());
     }
@@ -62,10 +64,13 @@ public final class SecondPartTasks {
     // Надо вычислить, чья общая длина произведений наибольшая.
     public static String findPrinter(Map<String, List<String>> compositions) {
         return compositions.entrySet().stream()
-                .map(stringListEntry -> new Pair<>(stringListEntry.getKey(),
-                        stringListEntry.getValue().stream().collect(Collectors.joining()).length()))
-                .max((o1, o2) -> Integer.compare(o1.getValue(), o2.getValue()))
-                .orElse(new Pair<>(null, null)).getKey();
+                .map(e -> new Pair<>(e.getKey(),
+                        e.getValue().stream()
+                                .mapToInt(String::length)
+                                .sum()))
+                .max(Comparator.comparingInt(Pair::getValue))
+                .orElse(new Pair<>(null, null))
+                .getKey();
     }
 
     // Вы крупный поставщик продуктов. Каждая торговая сеть делает вам заказ в виде Map<Товар, Количество>.

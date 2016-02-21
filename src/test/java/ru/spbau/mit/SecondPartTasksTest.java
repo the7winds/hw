@@ -13,29 +13,13 @@ import static org.junit.Assert.*;
 public class SecondPartTasksTest {
 
     @Test
-    public void testFindQuotes(){
-        List<String> filesPrefixes = new LinkedList<>();
-        filesPrefixes.add("test1");
-        filesPrefixes.add("test2");
-        filesPrefixes.add("test3");
+    public void testFindQuotes() throws IOException {
+        List<String> filesPrefixes = Arrays.asList("test1", "test2", "test3");
 
-        List<List<String>> texts = new LinkedList();
-        List<String> list = new LinkedList<>();
-        list.add("abacaba");
-        list.add("wwww");
-        list.add("asdwe1 www");
-        texts.add(list);
-
-        list = new LinkedList<>();
-        list.add("weqweasd");
-        list.add("wwww");
-        list.add("asdwe2 www");
-        list.add("weqweasd");
-        texts.add(list);
-
-        list = new LinkedList<>();
-        list.add("");
-        texts.add(list);
+        List<List<String>> texts = new LinkedList<>();
+        texts.add(Arrays.asList("abacaba", "wwww", "asdwe1 www"));
+        texts.add(Arrays.asList("weqweasd", "wwww", "asdwe2 www", "weqweasd"));
+        texts.add(new LinkedList<>());
 
         List<String> paths = new LinkedList<>();
         for (String prefix : filesPrefixes) {
@@ -57,18 +41,24 @@ public class SecondPartTasksTest {
             }
         }
 
-        List<String> answer = new LinkedList<>();
-        answer.add("asdwe1 www");
-        answer.add("weqweasd");
-        answer.add("asdwe2 www");
-        answer.add("weqweasd");
+        List<String> answer = Arrays.asList("asdwe1 www", "weqweasd", "asdwe2 www", "weqweasd");
 
-        try {
-            assertEquals(answer, SecondPartTasks.findQuotes(paths, "asd"));
-            assertEquals(Collections.emptyList(), SecondPartTasks.findQuotes(Collections.emptyList(), "asd"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        assertEquals(answer, SecondPartTasks.findQuotes(paths, "asd"));
+    }
+
+    @Test
+    public void testFindQuotesNoFiles() throws IOException {
+        assertEquals(Collections.emptyList(), SecondPartTasks.findQuotes(Collections.emptyList(), "asd"));
+    }
+
+    @Test
+    public void testFindQuotesEmptyInput() throws IOException {
+        final String testname = "test";
+        File test = File.createTempFile(testname, null);
+        test.setReadable(false);
+        test.deleteOnExit();
+
+        assertEquals(Collections.emptyList(), SecondPartTasks.findQuotes(Arrays.asList(testname), "asd"));
     }
 
     @Test
@@ -80,16 +70,18 @@ public class SecondPartTasksTest {
     @Test
     public void testFindPrinter() {
         Map<String, List<String>> authors = new HashMap<>();
-        List<String> texts = new LinkedList<>();
-        texts.add("a");
-        texts.add("aaa");
+
+        List<String> texts = Arrays.asList("a", "aaa");
         authors.put("A", texts);
 
-        texts.clear();
-        texts.add("b");
+        texts = Arrays.asList("b", "c");
         authors.put("B", texts);
 
         assertEquals("A", SecondPartTasks.findPrinter(authors));
+    }
+
+    @Test
+    public void testFindPrinterEmptyArg() {
         assertNull(SecondPartTasks.findPrinter(Collections.emptyMap()));
     }
 
@@ -114,6 +106,10 @@ public class SecondPartTasksTest {
         sumOrder.put("C", 4);
 
         assertEquals(sumOrder, SecondPartTasks.calculateGlobalOrder(orders));
+    }
+
+    @Test
+    public void testCalculateGlobalOrderEmptyArg() {
         assertEquals(Collections.emptyMap(), SecondPartTasks.calculateGlobalOrder(Collections.emptyList()));
     }
 }
