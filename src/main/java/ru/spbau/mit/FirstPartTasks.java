@@ -71,7 +71,7 @@ public final class FirstPartTasks {
     // (если в альбоме нет ни одного трека, считать, что максимум рейтинга в нем --- 0)
     public static Optional<Album> minMaxRating(Stream<Album> albums) {
         return albums.min(Comparator.comparingInt((a) -> a.getTracks().stream()
-                .max((t1, t2) -> t1.getRating() - t2.getRating())
+                .max(Comparator.comparingInt(Track::getRating))
                 .orElse(new Track(null, 0))
                 .getRating()));
     }

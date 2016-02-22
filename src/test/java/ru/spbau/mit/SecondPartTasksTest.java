@@ -23,22 +23,18 @@ public class SecondPartTasksTest {
 
         List<String> paths = new LinkedList<>();
         for (String prefix : filesPrefixes) {
-            try {
-                File file = File.createTempFile(prefix, null);
-                file.deleteOnExit();
+            File file = File.createTempFile(prefix, null);
+            file.deleteOnExit();
 
-                try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-                    for (String line : texts.get(0)) {
-                        writer.write(line);
-                        writer.newLine();
-                    }
-                    texts.remove(0);
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+                for (String line : texts.get(0)) {
+                    writer.write(line);
+                    writer.newLine();
                 }
-
-                paths.add(file.getPath());
-            } catch (IOException e) {
-                e.printStackTrace();
+                texts.remove(0);
             }
+
+            paths.add(file.getPath());
         }
 
         List<String> answer = Arrays.asList("asdwe1 www", "weqweasd", "asdwe2 www", "weqweasd");
@@ -52,7 +48,7 @@ public class SecondPartTasksTest {
     }
 
     @Test
-    public void testFindQuotesEmptyInput() throws IOException {
+    public void testFindQuotesNotReadableFile() throws IOException {
         final String testname = "test";
         File test = File.createTempFile(testname, null);
         test.setReadable(false);
