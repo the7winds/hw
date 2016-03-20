@@ -14,18 +14,15 @@ public class Server {
     private ServerSocket serverSocket;
     private ExecutorService executorService;
 
-    private final Runnable connectionsAcceptor = new Runnable() {
-        @Override
-        public void run() {
-            try {
-                while (!serverSocket.isClosed()) {
-                    try {
-                        Socket socket = serverSocket.accept();
-                        executorService.execute(new SocketHandler(socket));
-                    } catch (SocketTimeoutException ignored) {}
-                }
-            } catch (IOException ignored) {}
-        }
+    private final Runnable connectionsAcceptor = () -> {
+        try {
+            while (!serverSocket.isClosed()) {
+                try {
+                    Socket socket = serverSocket.accept();
+                    executorService.execute(new SocketHandler(socket));
+                } catch (SocketTimeoutException ignored) {}
+            }
+        } catch (IOException ignored) {}
     };
 
     private static class SocketHandler implements Runnable {
