@@ -31,7 +31,7 @@ public class Client {
             return null;
         } else {
             Map<String, Boolean> dirs = new Hashtable<>();
-            for (int i = 0; i < len; i++) {
+            for (int i = 0; i < len - 1; i++) {
                 String file = dataInputStream.readUTF();
                 boolean isDir = dataInputStream.readBoolean();
                 dirs.put(file, isDir);

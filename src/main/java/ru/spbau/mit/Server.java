@@ -64,7 +64,7 @@ public class Server {
 
             if (directory.exists() && directory.isDirectory()) {
                 File[] files = directory.listFiles();
-                dataOutputStream.writeInt(files.length);
+                dataOutputStream.writeInt(files.length  + 1);
                 for (File file : files) {
                     dataOutputStream.writeUTF(file.getName());
                     dataOutputStream.writeBoolean(file.isDirectory());
