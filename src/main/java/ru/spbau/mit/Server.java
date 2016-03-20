@@ -10,6 +10,7 @@ import java.util.concurrent.Executors;
 
 public class Server {
 
+    private static final int SERVER_SOCKET_TIMEOUT = 100;
     private ServerSocket serverSocket;
     private ExecutorService executorService;
 
@@ -28,14 +29,14 @@ public class Server {
     };
 
     private static class SocketHandler implements Runnable {
-        private static final int TIMEOUT = 100;
+        private static final int SOCKET_TIMEOUT = 100;
         private final Socket socket;
         private final DataInputStream dataInputStream;
         private final DataOutputStream dataOutputStream;
 
         private SocketHandler(Socket socket) throws IOException {
             this.socket = socket;
-            this.socket.setSoTimeout(TIMEOUT);
+            this.socket.setSoTimeout(SOCKET_TIMEOUT);
             dataInputStream = new DataInputStream(socket.getInputStream());
             dataOutputStream = new DataOutputStream(socket.getOutputStream());
         }
@@ -70,7 +71,7 @@ public class Server {
                     dataOutputStream.writeBoolean(file.isDirectory());
                 }
             } else {
-                dataOutputStream.write(0);
+                dataOutputStream.writeInt(0);
             }
 
             dataOutputStream.flush();
@@ -101,9 +102,11 @@ public class Server {
         serverSocket = new ServerSocket(port);
         executorService = Executors.newCachedThreadPool();
         executorService.execute(connectionsAcceptor);
+        serverSocket.setSoTimeout(SERVER_SOCKET_TIMEOUT);
     }
 
     public void stop() throws IOException, InterruptedException {
         serverSocket.close();
+        executorService.shutdownNow();
     }
 }
