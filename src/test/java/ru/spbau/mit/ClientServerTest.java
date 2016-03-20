@@ -1,5 +1,6 @@
 package ru.spbau.mit;
 
+import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.*;
@@ -9,14 +10,19 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 
 public class ClientServerTest {
-    private String host = "localhost";
-    private Map<String, Boolean> answer = new Hashtable<>();
+    private final String host = "localhost";
+    private final int port = 2000 + new Random().nextInt() % 1000;
+    private final Map<String, Boolean> answer = new Hashtable<>();
+
+    @Rule
+    public ThreadRule threadRule = new ThreadRule();
 
     public ClientServerTest() {
         answer.put("3", true);
@@ -24,30 +30,11 @@ public class ClientServerTest {
         answer.put("t.txt", false);
     }
 
-    private int getNewPort() {
-        return 8000 + (new Random().nextInt()) % 100;
-    }
-
-    @Test
-    public void simpleConnectionTest() throws IOException, InterruptedException {
-        Server server = new Server();
-        Client client = new Client();
-
-        int port = getNewPort();
-        server.start(port);
-        client.connect(host, port);
-
-        client.disconnect();
-        server.stop();
-    }
-
     @Test
     public void simpleListRequest() throws IOException, InterruptedException {
-
         Server server = new Server();
         Client client = new Client();
 
-        int port = getNewPort();
         server.start(port);
         client.connect(host, port);
 
@@ -62,7 +49,6 @@ public class ClientServerTest {
         Server server = new Server();
         Client client = new Client();
 
-        int port = getNewPort();
         server.start(port);
         client.connect(host, port);
 
@@ -77,7 +63,6 @@ public class ClientServerTest {
         Server server = new Server();
         Client client = new Client();
 
-        int port = getNewPort();
         server.start(port);
         client.connect(host, port);
 
@@ -101,7 +86,6 @@ public class ClientServerTest {
         Server server = new Server();
         Client client = new Client();
 
-        int port = getNewPort();
         server.start(port);
         client.connect(host, port);
 
@@ -118,35 +102,39 @@ public class ClientServerTest {
     public void manyClientsListRequest() throws IOException, InterruptedException {
         Server server = new Server();
 
-        int port = getNewPort();
         server.start(port);
 
         int limit = 20;
         ExecutorService executorService = Executors.newFixedThreadPool(limit);
         CountDownLatch countDownLatch = new CountDownLatch(limit);
-        CountDownLatch countDownLatch2 = new CountDownLatch(limit);
 
         for (int i = 0; i < limit; i++) {
             executorService.submit((Runnable) () -> {
+                threadRule.register(Thread.currentThread());
                 Client client = new Client();
-                countDownLatch.countDown();
+
                 try {
+                    countDownLatch.countDown();
                     countDownLatch.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                try {
+
                     client.connect(host, port);
-                    assertEquals(answer, client.executeList("./src/test/resources"));
-                    client.disconnect();
-                    countDownLatch2.countDown();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    if (!answer.equals(client.executeList("./src/test/resources"))) {
+                        throw new RuntimeException();
+                    }
+                } catch (InterruptedException | IOException e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    try {
+                        client.disconnect();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             });
         }
 
-        countDownLatch2.await();
+        executorService.shutdown();
+        executorService.awaitTermination(500, TimeUnit.MILLISECONDS);
         server.stop();
     }
 }
