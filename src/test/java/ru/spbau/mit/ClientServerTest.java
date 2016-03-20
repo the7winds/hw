@@ -33,10 +33,12 @@ public class ClientServerTest {
         server.start(port);
         client.connect(host, port);
 
-        assertEquals(answer, client.executeList("./src/test/resources"));
+        Map<String, Boolean> list = client.executeList("./src/test/resources");
 
         client.disconnect();
         server.stop();
+
+        assertEquals(answer, list);
     }
 
     @Test
@@ -47,10 +49,12 @@ public class ClientServerTest {
         server.start(port);
         client.connect(host, port);
 
-        assertNull(client.executeList("./src/test/not_exists"));
+        Map<String, Boolean> list = client.executeList("./src/test/not_exists");
 
         client.disconnect();
         server.stop();
+
+        assertNull(list);
     }
 
     @Test
@@ -68,12 +72,13 @@ public class ClientServerTest {
         client.disconnect();
         server.stop();
 
-        BufferedReader br1 = new BufferedReader(new InputStreamReader(new FileInputStream(p1)));
-        BufferedReader br2 = new BufferedReader(new InputStreamReader(new FileInputStream(p2)));
-        assertEquals(br1.readLine(), br2.readLine());
+        String s1 = new BufferedReader(new InputStreamReader(new FileInputStream(p1))).readLine();
+        String s2 = new BufferedReader(new InputStreamReader(new FileInputStream(p2))).readLine();
 
         File file = new File(p2);
         file.delete();
+
+        assertEquals(s1, s2);
     }
 
     @Test
@@ -87,10 +92,12 @@ public class ClientServerTest {
         String p1 = "./src/test/resources/not_exists.txt";
         String p2 = "./src/test/resources/1/t.txt";
 
-        assertNull(client.executeGet(p1, p2));
+        File file = client.executeGet(p1, p2);
 
         client.disconnect();
         server.stop();
+
+        assertNull(file);
     }
 
     @Test
