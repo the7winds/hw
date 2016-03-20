@@ -34,11 +34,11 @@ public class ThreadRule implements TestRule {
             public void evaluate() throws Throwable {
                 exceptionHappened = false;
                 stillAlive = false;
+                threads.clear();
 
                 statement.evaluate();
 
-                threads.forEach(thread -> stillAlive = thread.isAlive());
-                threads.clear();
+                threads.forEach(thread -> stillAlive |= thread.isAlive());
 
                 assertFalse(stillAlive);
                 assertFalse(exceptionHappened);

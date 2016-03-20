@@ -4,13 +4,8 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import java.io.*;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -105,11 +100,11 @@ public class ClientServerTest {
         server.start(port);
 
         int limit = 20;
-        ExecutorService executorService = Executors.newFixedThreadPool(limit);
         CountDownLatch countDownLatch = new CountDownLatch(limit);
+        List<Thread> threads = new LinkedList<>();
 
         for (int i = 0; i < limit; i++) {
-            executorService.submit((Runnable) () -> {
+            Thread thread = new Thread(() -> {
                 threadRule.register(Thread.currentThread());
                 Client client = new Client();
 
@@ -131,10 +126,18 @@ public class ClientServerTest {
                     }
                 }
             });
+            thread.start();
+            threads.add(thread);
         }
 
-        executorService.shutdown();
-        executorService.awaitTermination(500, TimeUnit.MILLISECONDS);
+        threads.forEach((thread) -> {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+
         server.stop();
     }
 }
