@@ -23,7 +23,6 @@ public final class Update {
 
         private short port;
         private Collection<Integer> ids;
-        private byte[] ip;
 
         public Request() {
         }
@@ -51,10 +50,6 @@ public final class Update {
             for (int id : ids) {
                 dataOutputStream.writeInt(id);
             }
-        }
-
-        public byte[] getIp() {
-            return ip;
         }
 
         public short getPort() {

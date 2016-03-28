@@ -11,10 +11,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 ;
@@ -38,7 +35,7 @@ public class TorrentHandler implements Runnable {
     /** in minutes */
     private final long WAITING_UPDATE_TIMEOUT = 5;
     private Timer waitingUpdateTimeout;
-    private Map<byte[], Map<Short, RemoveFromTrackerTask>> adresesToTask;
+    private Map<byte[], Map<Short, RemoveFromTrackerTask>> adresesToTask = new HashMap<>();
     private class RemoveFromTrackerTask extends TimerTask {
 
         private byte[] ip;
@@ -113,10 +110,10 @@ public class TorrentHandler implements Runnable {
         new Sources.Answer(clientsInfo.getSources(request.getId())).write(dataOutputStream);
     }
 
-    private void handleRequest(Update.Request request) {
-        byte[] ip = request.getIp();
+    private void handleRequest(Update.Request request) throws IOException {
         short port = request.getPort();
 
+        byte[] ip = socket.getInetAddress().getAddress();
         if (adresesToTask.get(ip) != null) {
             if (adresesToTask.get(ip).get(port) != null) {
                 adresesToTask.get(ip).get(port).cancel();
@@ -130,5 +127,7 @@ public class TorrentHandler implements Runnable {
 
         clientsInfo.addClient(ip, port, request.getIds());
         waitingUpdateTimeout.schedule(removeFromTrackerTask, TimeUnit.MINUTES.toMillis(WAITING_UPDATE_TIMEOUT));
+
+        new Update.Answer(true).write(dataOutputStream);
     }
 }
