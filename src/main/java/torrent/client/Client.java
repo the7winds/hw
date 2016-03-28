@@ -2,6 +2,7 @@ package torrent.client;
 
 import torrent.tracker.FilesInfo.FileInfo;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -17,7 +18,7 @@ public interface Client {
 
     void download(int id, Path dest) throws IOException;
 
-    void upload(Path file) throws IOException;
+    int upload(File file) throws IOException;
 
     void disconnect() throws IOException;
 }

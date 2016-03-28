@@ -39,7 +39,7 @@ public final class Get {
 
         @Override
         public void write(DataOutputStream dataOutputStream) throws IOException {
-            dataOutputStream.writeInt(TAG);
+            dataOutputStream.writeByte(TAG);
             dataOutputStream.writeInt(id);
             dataOutputStream.writeInt(part);
         }

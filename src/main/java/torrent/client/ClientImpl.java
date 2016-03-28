@@ -9,14 +9,10 @@ import torrent.tracker.protocol.Sources;
 import torrent.tracker.protocol.Update;
 import torrent.tracker.protocol.Upload;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.net.Inet4Address;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -25,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static torrent.GlobalConsts.BLOCK_SIZE;
 import static torrent.tracker.FilesInfo.FileInfo;
 
 /**
@@ -81,6 +78,7 @@ public class ClientImpl implements Client{
 
     private void start() throws IOException {
         serverSocket = new ServerSocket(port);
+        executorService.execute(acceptor);
     }
 
     private void connectToTracker(String address) throws IOException {
@@ -149,11 +147,12 @@ public class ClientImpl implements Client{
         }
     }
 
-    private void execGetAndStore(int id, int part, Path dest) throws IOException {
+    private void execGetAndStore(int id, int part, File dest, long size) throws IOException {
         synchronized (clientClientSocket) {
             byte[] content = execGet(id, part);
-            DataOutputStream file = new DataOutputStream(Files.newOutputStream(dest));
-            file.write(content, 0, part * GlobalConsts.BLOCK_SIZE);
+            RandomAccessFile file = new RandomAccessFile(dest, "w");
+            file.skipBytes(part * BLOCK_SIZE);
+            file.write(content, 0, (int) (size / BLOCK_SIZE) == part ? (int) (size % BLOCK_SIZE) : BLOCK_SIZE);
             availablePartsProvider.addPart(id, part, dest);
         }
     }
@@ -190,11 +189,11 @@ public class ClientImpl implements Client{
         try {
             FileInfo fileInfo = execList().get(id);
             if (fileInfo != null) {
-                dest = dest.resolve(fileInfo.name);
-                RandomAccessFile file = new RandomAccessFile(dest.toFile(), "rw");
+                File destFile = dest.resolve(fileInfo.name).toFile();
+                RandomAccessFile file = new RandomAccessFile(destFile, "rw");
                 file.setLength(fileInfo.size);
 
-                int amountOfBlocks = (int) (fileInfo.size / GlobalConsts.BLOCK_SIZE + (fileInfo.size % GlobalConsts.BLOCK_SIZE != 0 ? 1 : 0));
+                int amountOfBlocks = (int) (fileInfo.size / BLOCK_SIZE + (fileInfo.size % BLOCK_SIZE != 0 ? 1 : 0));
                 Set<Integer> wantedBlocks = Stream.iterate(0, a -> a + 1)
                         .limit(amountOfBlocks)
                         .collect(Collectors.toSet());
@@ -204,16 +203,14 @@ public class ClientImpl implements Client{
 
                     for (ClientInfo clientInfo : sources) {
                         connectToClient(clientInfo.ip, clientInfo.port);
-                        Integer part = -1;
-                        for (Integer n : execStat(id)) {
-                            if (wantedBlocks.contains(n)) {
-                                part = n;
-                                break;
+                        Collection<Integer> parts = execStat(id);
+                        for (Integer part : parts) {
+                            if (wantedBlocks.contains(part)) {
+                                execGetAndStore(id, part, destFile, fileInfo.size);
+                                wantedBlocks.remove(part);
                             }
                         }
-                        if (part >= 0) {
-                            execGetAndStore(id, part, dest);
-                        }
+
                         disconnectFromClient();
                     }
                 }
@@ -224,9 +221,10 @@ public class ClientImpl implements Client{
     }
 
     @Override
-    public int upload(Path file) throws IOException {
-        int id = execUpload(file.getFileName().toString(), file.toFile().length());
+    public int upload(File file) throws IOException {
+        int id = execUpload(file.getName(), file.length());
         availablePartsProvider.addFile(id, file);
+        execUpdate();
         return id;
     }
 
