@@ -35,7 +35,7 @@ public class ClientsInfo {
         clinetInfoToIds.get(ip).put(port, ids);
         ClientInfo clientInfo = new ClientInfo(ip, port);
         for (int id : ids) {
-            sources.putIfAbsent(id, new TreeSet<>());
+            sources.putIfAbsent(id, new HashSet<>());
             sources.get(id).add(clientInfo);
         }
     }
