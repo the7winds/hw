@@ -190,10 +190,11 @@ public class ClientImpl implements Client{
         try {
             FileInfo fileInfo = execList().get(id);
             if (fileInfo != null) {
+                dest = dest.resolve(fileInfo.name);
                 RandomAccessFile file = new RandomAccessFile(dest.toFile(), "rw");
                 file.setLength(fileInfo.size);
 
-                int amountOfBlocks = (int) (fileInfo.size / GlobalConsts.BLOCK_SIZE + fileInfo.size % GlobalConsts.BLOCK_SIZE);
+                int amountOfBlocks = (int) (fileInfo.size / GlobalConsts.BLOCK_SIZE + (fileInfo.size % GlobalConsts.BLOCK_SIZE != 0 ? 1 : 0));
                 Set<Integer> wantedBlocks = Stream.iterate(0, a -> a + 1)
                         .limit(amountOfBlocks)
                         .collect(Collectors.toSet());
@@ -223,9 +224,10 @@ public class ClientImpl implements Client{
     }
 
     @Override
-    public void upload(Path file) throws IOException {
+    public int upload(Path file) throws IOException {
         int id = execUpload(file.getFileName().toString(), file.toFile().length());
         availablePartsProvider.addFile(id, file);
+        return id;
     }
 
     @Override
