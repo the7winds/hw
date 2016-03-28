@@ -22,8 +22,11 @@ public class ClientsInfo {
 
         @Override
         public boolean equals(Object obj) {
-            ClientInfo clientInfo = (ClientInfo) obj;
-            return port == clientInfo.port && Arrays.equals(ip, clientInfo.ip);
+            if (obj instanceof ClientInfo) {
+                ClientInfo clientInfo = (ClientInfo) obj;
+                return port == clientInfo.port && Arrays.equals(ip, clientInfo.ip);
+            }
+            return false;
         }
     }
 
