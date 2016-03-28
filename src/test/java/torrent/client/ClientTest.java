@@ -58,7 +58,9 @@ public class ClientTest {
 
         tracker.start();
         client.connect(host);
+
         Collection<FileInfo> files = client.list();
+
         client.disconnect();
         tracker.stop();
 
@@ -74,13 +76,15 @@ public class ClientTest {
 
         tracker.start();
         client.connect(host);
-        Path path = TEST_RESOURCES.resolve("2.txt");
-        int id = client.upload(path);
+
+        File file = TEST_RESOURCES.resolve("2.txt").toFile();
+        int id = client.upload(file);
         Collection<FileInfo> list = client.list();
+
         client.disconnect();
         tracker.stop();
 
-        assertTrue(list.contains(new FileInfo(id, "2.txt", path.toFile().length())));
+        assertTrue(list.contains(new FileInfo(id, "2.txt", file.length())));
     }
 
     @Test
@@ -93,7 +97,7 @@ public class ClientTest {
         loader.connect(host);
         downloader.connect(host);
 
-        Path file = TEST_RESOURCES.resolve("2.txt");
+        File file = TEST_RESOURCES.resolve("2.txt").toFile();
 
         int id = loader.upload(file);
         downloader.download(id, TEST_RESOURCES.resolve("downloads"));
@@ -102,8 +106,33 @@ public class ClientTest {
         loader.disconnect();
         tracker.stop();
 
-        Path fileClone = TEST_RESOURCES.resolve("downloads").resolve("2.txt");
+        File downloaded = TEST_RESOURCES.resolve("downloads").resolve("2.txt").toFile();
 
-        assertTrue(com.google.common.io.Files.equal(file.toFile(), fileClone.toFile()));
+        assertTrue(com.google.common.io.Files.equal(file, downloaded));
+    }
+
+    @Test
+    public void downloadBig() throws Exception {
+        Tracker tracker = new Tracker();
+        Client loader = new ClientImpl(port0);
+        Client downloader = new ClientImpl(port1);
+
+        tracker.start();
+        loader.connect(host);
+        downloader.connect(host);
+
+        Path dest = TEST_RESOURCES.resolve("downloads");
+        File file = dest.resolve("3.txt").toFile();
+
+        int id = loader.upload(file);
+        downloader.download(id, dest);
+
+        downloader.disconnect();
+        loader.disconnect();
+        tracker.stop();
+
+        File fileClone = TEST_RESOURCES.resolve("downloads").resolve("3.txt").toFile();
+
+        assertTrue(com.google.common.io.Files.equal(file, fileClone));
     }
 }
