@@ -67,7 +67,8 @@ class AvailablePartsProvider {
     }
 
     synchronized void addFile(int id, Path path) throws IOException {
-        for (int n = (int) (path.toFile().length() / BLOCK_SIZE + path.toFile().length() % BLOCK_SIZE), i = 0; i < n; ++i) {
+        for (int n = (int) (path.toFile().length() / BLOCK_SIZE +
+                (path.toFile().length() % BLOCK_SIZE != 0 ? 1 : 0)), i = 0; i < n; ++i) {
             addPart(id, i, path);
         }
     }
