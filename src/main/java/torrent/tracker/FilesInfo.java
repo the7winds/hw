@@ -39,7 +39,7 @@ public class FilesInfo {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof FilesInfo) {
+            if (obj instanceof FileInfo) {
                 FileInfo fileInfo = (FileInfo) obj;
                 return fileInfo.id == id && fileInfo.name.equals(name) && fileInfo.size == size;
             }
