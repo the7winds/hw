@@ -42,6 +42,7 @@ public final class Get {
             dataOutputStream.writeByte(TAG);
             dataOutputStream.writeInt(id);
             dataOutputStream.writeInt(part);
+            dataOutputStream.flush();
         }
 
         public int getId() {
@@ -73,6 +74,7 @@ public final class Get {
         @Override
         public void write(DataOutputStream dataOutputStream) throws IOException {
             dataOutputStream.write(content);
+            dataOutputStream.flush();
         }
 
         public byte[] getContent() {

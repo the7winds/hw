@@ -39,6 +39,7 @@ public final class Stat {
         public void write(DataOutputStream dataOutputStream) throws IOException {
             dataOutputStream.writeByte(TAG);
             dataOutputStream.writeInt(id);
+            dataOutputStream.flush();
         }
 
         public int getId() {
@@ -73,6 +74,7 @@ public final class Stat {
             for (int n : available) {
                 dataOutputStream.writeInt(n);
             }
+            dataOutputStream.flush();
         }
 
         public Collection<Integer> getAvailable() {

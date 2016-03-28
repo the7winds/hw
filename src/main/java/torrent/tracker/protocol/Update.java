@@ -50,6 +50,7 @@ public final class Update {
             for (int id : ids) {
                 dataOutputStream.writeInt(id);
             }
+            dataOutputStream.flush();
         }
 
         public short getPort() {
@@ -80,6 +81,7 @@ public final class Update {
         @Override
         public void write(DataOutputStream dataOutputStream) throws IOException {
             dataOutputStream.writeBoolean(status);
+            dataOutputStream.flush();
         }
 
         public boolean getStatus() {

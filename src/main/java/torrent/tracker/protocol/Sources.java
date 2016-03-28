@@ -40,6 +40,7 @@ public final class Sources {
         public void write(DataOutputStream dataOutputStream) throws IOException {
             dataOutputStream.writeByte(TAG);
             dataOutputStream.writeInt(id);
+            dataOutputStream.flush();
         }
 
         public int getId() {
@@ -61,8 +62,8 @@ public final class Sources {
         @Override
         public void read(DataInputStream dataInputStream) throws IOException {
             clientInfoList = new LinkedList<>();
-            int count = dataInputStream.readInt();
-            for (int i = 0; i < count; ++i) {
+            int size = dataInputStream.readInt();
+            for (int i = 0; i < size; ++i) {
                 byte[] ip = new byte[4];
                 dataInputStream.readFully(ip);
                 short port = dataInputStream.readShort();
@@ -72,12 +73,12 @@ public final class Sources {
 
         @Override
         public void write(DataOutputStream dataOutputStream) throws IOException {
-            dataOutputStream.writeByte(TAG);
             dataOutputStream.writeInt(clientInfoList.size());
             for (ClientInfo clientInfo : clientInfoList) {
                 dataOutputStream.write(clientInfo.ip);
                 dataOutputStream.writeShort(clientInfo.port);
             }
+            dataOutputStream.flush();
         }
 
         public Collection<ClientInfo> getClientInfoList() {

@@ -43,6 +43,7 @@ public final class Upload {
             dataOutputStream.writeByte(TAG);
             dataOutputStream.writeUTF(name);
             dataOutputStream.writeLong(size);
+            dataOutputStream.flush();
         }
 
         public String getName() {
@@ -73,6 +74,7 @@ public final class Upload {
         @Override
         public void write(DataOutputStream dataOutputStream) throws IOException {
             dataOutputStream.writeInt(id);
+            dataOutputStream.flush();
         }
 
         public int getId() {

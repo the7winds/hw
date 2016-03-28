@@ -32,6 +32,7 @@ public final class List {
         @Override
         public void write(DataOutputStream dataOutputStream) throws IOException {
             dataOutputStream.writeByte(TAG);
+            dataOutputStream.flush();
         }
     }
 
@@ -66,6 +67,7 @@ public final class List {
                 dataOutputStream.writeUTF(fileInfo.name);
                 dataOutputStream.writeLong(fileInfo.size);
             }
+            dataOutputStream.flush();
         }
 
         public Map<Integer, FileInfo> getFileInfos() {
