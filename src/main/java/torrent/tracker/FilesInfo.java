@@ -1,6 +1,7 @@
 package torrent.tracker;
 
 import org.ini4j.Ini;
+import org.ini4j.Profile;
 import torrent.GlobalConsts;
 
 import java.io.IOException;
@@ -49,9 +50,9 @@ public class FilesInfo {
 
     public FilesInfo() throws IOException {
         INI = new Ini(FILES_INFO.toFile());
-        nextId = INI.keySet().stream()
-                .mapToInt(Integer::valueOf)
-                .max().orElse(0);
+        nextId = INI.values().stream()
+                .mapToInt(section -> Integer.valueOf(section.get(Keys.ID.name())))
+                .max().orElse(0) + 1;
     }
 
     public synchronized Map<Integer, FileInfo> getList() {
