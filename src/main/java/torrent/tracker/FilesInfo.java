@@ -36,6 +36,15 @@ public class FilesInfo {
             this.name = name;
             this.size = size;
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof FilesInfo) {
+                FileInfo fileInfo = (FileInfo) obj;
+                return fileInfo.id == id && fileInfo.name.equals(name) && fileInfo.size == size;
+            }
+            return false;
+        }
     }
 
     public FilesInfo() throws IOException {
