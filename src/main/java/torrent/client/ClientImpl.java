@@ -1,6 +1,5 @@
 package torrent.client;
 
-import torrent.GlobalConsts;
 import torrent.client.protocol.Get;
 import torrent.client.protocol.Stat;
 import torrent.tracker.ClientsInfo.ClientInfo;
@@ -13,7 +12,6 @@ import java.io.*;
 import java.net.Inet4Address;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,13 +19,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static torrent.GlobalConsts.BLOCK_SIZE;
 import static torrent.tracker.FilesInfo.FileInfo;
+import static torrent.tracker.TrackerImpl.BLOCK_SIZE;
+import static torrent.tracker.TrackerImpl.TRACKER_PORT;
 
 /**
  * Created by the7winds on 26.03.16.
  */
-public class ClientImpl implements Client{
+class ClientImpl implements ClientNetwork {
 
     // connects another clients
     private final short port;
@@ -82,7 +81,7 @@ public class ClientImpl implements Client{
     }
 
     private void connectToTracker(String address) throws IOException {
-        clientTrackerSocket = new Socket(address, GlobalConsts.TRACKER_PORT);
+        clientTrackerSocket = new Socket(address, TRACKER_PORT);
         clientTrackerDataInputStream = new DataInputStream(clientTrackerSocket.getInputStream());
         clientTrackerDataOutputStream = new DataOutputStream(clientTrackerSocket.getOutputStream());
     }
@@ -150,11 +149,12 @@ public class ClientImpl implements Client{
     private void execGetAndStore(int id, int part, File dest, long size) throws IOException {
         synchronized (clientClientSocket) {
             byte[] content = execGet(id, part);
-            RandomAccessFile file = new RandomAccessFile(dest, "w");
+            RandomAccessFile file = new RandomAccessFile(dest, "rw");
             file.skipBytes(part * BLOCK_SIZE);
             file.write(content, 0, (int) (size / BLOCK_SIZE) == part ? (int) (size % BLOCK_SIZE) : BLOCK_SIZE);
             availablePartsProvider.addPart(id, part, dest);
         }
+        execUpdate();
     }
 
     private void disconnectFromClient() throws IOException {
@@ -170,9 +170,9 @@ public class ClientImpl implements Client{
     }
 
     @Override
-    public void connect(String trackerAddr) throws IOException {
+    public void connect(String trackerAddress) throws IOException {
         // connects to tracker
-        connectToTracker(trackerAddr);
+        connectToTracker(trackerAddress);
         // starts update task
         updateTimer.schedule(updateTask, 0, TimeUnit.MINUTES.toMillis(UPDATE_PERIOD_TIME));
         // start sid task
@@ -185,13 +185,13 @@ public class ClientImpl implements Client{
     }
 
     @Override
-    public void download(int id, Path dest) {
+    public void download(int id, String pathname) {
         try {
             FileInfo fileInfo = execList().get(id);
             if (fileInfo != null) {
-                File destFile = dest.resolve(fileInfo.name).toFile();
-                RandomAccessFile file = new RandomAccessFile(destFile, "rw");
-                file.setLength(fileInfo.size);
+                File dest = new File(pathname);
+                dest.createNewFile();
+                new RandomAccessFile(dest, "rw").setLength(fileInfo.size);
 
                 int amountOfBlocks = (int) (fileInfo.size / BLOCK_SIZE + (fileInfo.size % BLOCK_SIZE != 0 ? 1 : 0));
                 Set<Integer> wantedBlocks = Stream.iterate(0, a -> a + 1)
@@ -202,19 +202,24 @@ public class ClientImpl implements Client{
                     Collection<ClientInfo> sources = execSources(id);
 
                     for (ClientInfo clientInfo : sources) {
-                        connectToClient(clientInfo.ip, clientInfo.port);
-                        Collection<Integer> parts = execStat(id);
-                        for (Integer part : parts) {
-                            if (wantedBlocks.contains(part)) {
-                                execGetAndStore(id, part, destFile, fileInfo.size);
-                                wantedBlocks.remove(part);
+                        try {
+                            connectToClient(clientInfo.ip, clientInfo.port);
+                            Collection<Integer> parts = execStat(id);
+                            for (Integer part : parts) {
+                                if (wantedBlocks.contains(part)) {
+                                    execGetAndStore(id, part, dest, fileInfo.size);
+                                    wantedBlocks.remove(part);
+                                }
                             }
-                        }
 
-                        disconnectFromClient();
+                            disconnectFromClient();
+                        } catch (IOException ignored) {
+                        }
                     }
                 }
             }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }

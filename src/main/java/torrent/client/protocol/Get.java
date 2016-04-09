@@ -1,10 +1,11 @@
 package torrent.client.protocol;
 
-import torrent.GlobalConsts;
+import torrent.ArgsAndConsts;
 import torrent.Sendable;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 
 /**
@@ -67,8 +68,12 @@ public final class Get {
 
         @Override
         public void read(DataInputStream dataInputStream) throws IOException {
-            content = new byte[GlobalConsts.BLOCK_SIZE];
-            dataInputStream.readFully(content);
+            content = new byte[ArgsAndConsts.BLOCK_SIZE];
+            try {
+                dataInputStream.readFully(content);
+            } catch (EOFException ignored) {
+
+            }
         }
 
         @Override

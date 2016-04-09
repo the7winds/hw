@@ -1,7 +1,7 @@
 package torrent.client;
 
 import org.ini4j.Ini;
-import torrent.GlobalConsts;
+import torrent.ArgsAndConsts;
 
 import java.io.DataInputStream;
 import java.io.EOFException;
@@ -13,14 +13,14 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import static torrent.GlobalConsts.BLOCK_SIZE;
+import static torrent.ArgsAndConsts.BLOCK_SIZE;
 
 /**
  * Created by the7winds on 27.03.16.
  */
 class AvailablePartsProvider {
 
-    private static final Path AVAILABLE_PARTS_INFO = GlobalConsts.RESOURCES.resolve("availableParts.ini");
+    private static final Path AVAILABLE_PARTS_INFO = ArgsAndConsts.RESOURCES.resolve("availableParts.ini");
     private final Ini INI;
 
     private enum Keys {

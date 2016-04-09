@@ -3,9 +3,9 @@ package torrent.client;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import torrent.GlobalConsts;
+import torrent.ArgsAndConsts;
 import torrent.tracker.FilesInfo.FileInfo;
-import torrent.tracker.Tracker;
+import torrent.tracker.TrackerImpl;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,18 +31,18 @@ public class ClientTest {
     public void before() throws IOException {
         cleanFiles();
         Path filesInfoNotEmpty = TEST_RESOURCES.resolve("inifiles").resolve("filesInfoNotEmpty.ini");
-        Path filesInfo = GlobalConsts.RESOURCES.resolve("filesInfo.ini");
+        Path filesInfo = ArgsAndConsts.RESOURCES.resolve("filesInfo.ini");
         filesInfo.toFile().delete();
         Files.copy(filesInfoNotEmpty, filesInfo);
     }
 
     @After
     public void cleanFiles() throws IOException {
-        File filesInfo = GlobalConsts.RESOURCES.resolve("filesInfo.ini").toFile();
+        File filesInfo = ArgsAndConsts.RESOURCES.resolve("filesInfo.ini").toFile();
         filesInfo.delete();
         filesInfo.createNewFile();
 
-        File availableParts = GlobalConsts.RESOURCES.resolve("availableParts.ini").toFile();
+        File availableParts = ArgsAndConsts.RESOURCES.resolve("availableParts.ini").toFile();
         availableParts.delete();
         availableParts.createNewFile();
 
@@ -53,16 +53,16 @@ public class ClientTest {
 
     @Test
     public void list() throws Exception {
-        Tracker tracker = new Tracker();
-        Client client = new ClientImpl(port0);
+        TrackerImpl trackerImpl = new TrackerImpl();
+        ClientNetwork client = new ClientImpl(port0);
 
-        tracker.start();
+        trackerImpl.start();
         client.connect(host);
 
         Collection<FileInfo> files = client.list();
 
         client.disconnect();
-        tracker.stop();
+        trackerImpl.stop();
 
         assertTrue(files.contains(new FileInfo(0, "0.txt", 0)));
         assertTrue(files.contains(new FileInfo(1, "1.txt", 10)));
@@ -71,10 +71,10 @@ public class ClientTest {
 
     @Test
     public void upload() throws Exception {
-        Tracker tracker = new Tracker();
-        Client client = new ClientImpl(port0);
+        TrackerImpl trackerImpl = new TrackerImpl();
+        ClientNetwork client = new ClientImpl(port0);
 
-        tracker.start();
+        trackerImpl.start();
         client.connect(host);
 
         File file = TEST_RESOURCES.resolve("2.txt").toFile();
@@ -82,57 +82,54 @@ public class ClientTest {
         Collection<FileInfo> list = client.list();
 
         client.disconnect();
-        tracker.stop();
+        trackerImpl.stop();
 
         assertTrue(list.contains(new FileInfo(id, "2.txt", file.length())));
     }
 
     @Test
     public void download() throws Exception {
-        Tracker tracker = new Tracker();
-        Client loader = new ClientImpl(port0);
-        Client downloader = new ClientImpl(port1);
+        TrackerImpl trackerImpl = new TrackerImpl();
+        ClientNetwork loader = new ClientImpl(port0);
+        ClientNetwork downloader = new ClientImpl(port1);
 
-        tracker.start();
+        trackerImpl.start();
         loader.connect(host);
         downloader.connect(host);
 
         File file = TEST_RESOURCES.resolve("2.txt").toFile();
+        Path dest = TEST_RESOURCES.resolve("downloads").resolve("2.txt");
 
         int id = loader.upload(file);
-        downloader.download(id, TEST_RESOURCES.resolve("downloads"));
+        downloader.download(id, dest.toString());
 
         downloader.disconnect();
         loader.disconnect();
-        tracker.stop();
+        trackerImpl.stop();
 
-        File downloaded = TEST_RESOURCES.resolve("downloads").resolve("2.txt").toFile();
-
-        assertTrue(com.google.common.io.Files.equal(file, downloaded));
+        assertTrue(com.google.common.io.Files.equal(file, dest.toFile()));
     }
 
     @Test
     public void downloadBig() throws Exception {
-        Tracker tracker = new Tracker();
-        Client loader = new ClientImpl(port0);
-        Client downloader = new ClientImpl(port1);
+        TrackerImpl trackerImpl = new TrackerImpl();
+        ClientNetwork loader = new ClientImpl(port0);
+        ClientNetwork downloader = new ClientImpl(port1);
 
-        tracker.start();
+        trackerImpl.start();
         loader.connect(host);
         downloader.connect(host);
 
-        Path dest = TEST_RESOURCES.resolve("downloads");
-        File file = dest.resolve("3.txt").toFile();
+        Path dest = TEST_RESOURCES.resolve("downloads").resolve("3.txt");
+        File file = TEST_RESOURCES.resolve("3.txt").toFile();
 
         int id = loader.upload(file);
-        downloader.download(id, dest);
+        downloader.download(id, dest.toString());
 
         downloader.disconnect();
         loader.disconnect();
-        tracker.stop();
+        trackerImpl.stop();
 
-        File fileClone = TEST_RESOURCES.resolve("downloads").resolve("3.txt").toFile();
-
-        assertTrue(com.google.common.io.Files.equal(file, fileClone));
+        assertTrue(com.google.common.io.Files.equal(file, dest.toFile()));
     }
 }

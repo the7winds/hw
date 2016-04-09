@@ -14,7 +14,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-;
+
 
 /**
  * Created by the7winds on 27.03.16.
@@ -35,7 +35,7 @@ public class TorrentHandler implements Runnable {
     /** in minutes */
     private final long WAITING_UPDATE_TIMEOUT = 5;
     private Timer waitingUpdateTimeout;
-    private Map<byte[], Map<Short, RemoveFromTrackerTask>> adresesToTask = new HashMap<>();
+    private Map<byte[], Map<Short, RemoveFromTrackerTask>> addressToTask = new HashMap<>();
     private class RemoveFromTrackerTask extends TimerTask {
 
         private byte[] ip;
@@ -48,6 +48,7 @@ public class TorrentHandler implements Runnable {
 
         @Override
         public void run() {
+            Notifications.removeClient(ip, port);
             clientsInfo.removeClient(ip, port);
         }
     }
@@ -70,24 +71,32 @@ public class TorrentHandler implements Runnable {
                 byte requestTag = dataInputStream.readByte();
                 switch (requestTag) {
                     case 1:
+                        Notifications.listGet(socket);
                         List.Request listRequest = new List.Request();
                         listRequest.read(dataInputStream);
                         handleRequest(listRequest);
+                        Notifications.listDone(socket);
                         break;
                     case 2:
+                        Notifications.uploadGet(socket);
                         Upload.Request uploadRequest = new Upload.Request();
                         uploadRequest.read(dataInputStream);
                         handleRequest(uploadRequest);
+                        Notifications.uploadDone(socket);
                         break;
                     case 3:
+                        Notifications.sourcesGet(socket);
                         Sources.Request sourcesRequest = new Sources.Request();
                         sourcesRequest.read(dataInputStream);
                         handleRequest(sourcesRequest);
+                        Notifications.sourcesDone(socket);
                         break;
                     case 4:
+                        Notifications.updateGet(socket);
                         Update.Request updateRequest = new Update.Request();
                         updateRequest.read(dataInputStream);
                         handleRequest(updateRequest);
+                        Notifications.updateDone(socket);
                         break;
                     default:
                         throw new UnsupportedOperationException("Unsupported tag was received");
@@ -114,16 +123,16 @@ public class TorrentHandler implements Runnable {
         short port = request.getPort();
 
         byte[] ip = socket.getInetAddress().getAddress();
-        if (adresesToTask.get(ip) != null) {
-            if (adresesToTask.get(ip).get(port) != null) {
-                adresesToTask.get(ip).get(port).cancel();
+        if (addressToTask.get(ip) != null) {
+            if (addressToTask.get(ip).get(port) != null) {
+                addressToTask.get(ip).get(port).cancel();
                 waitingUpdateTimeout.purge();
             }
         }
 
         RemoveFromTrackerTask removeFromTrackerTask = new RemoveFromTrackerTask(ip, port);
-        adresesToTask.putIfAbsent(ip, new Hashtable<>());
-        adresesToTask.get(ip).put(port, removeFromTrackerTask);
+        addressToTask.putIfAbsent(ip, new Hashtable<>());
+        addressToTask.get(ip).put(port, removeFromTrackerTask);
 
         clientsInfo.addClient(ip, port, request.getIds());
         waitingUpdateTimeout.schedule(removeFromTrackerTask, TimeUnit.MINUTES.toMillis(WAITING_UPDATE_TIMEOUT));

@@ -8,7 +8,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
-;
 
 /**
  * Created by the7winds on 27.03.16.

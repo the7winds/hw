@@ -1,8 +1,7 @@
 package torrent.tracker;
 
 import org.ini4j.Ini;
-import org.ini4j.Profile;
-import torrent.GlobalConsts;
+import torrent.ArgsAndConsts;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -16,7 +15,7 @@ import java.util.stream.Collectors;
 public class FilesInfo {
 
     private int nextId;
-    private static final Path FILES_INFO = GlobalConsts.RESOURCES.resolve("filesInfo.ini");
+    private static final Path FILES_INFO = ArgsAndConsts.RESOURCES.resolve("filesInfo.ini");
     private final Ini INI;
 
     private enum Keys {

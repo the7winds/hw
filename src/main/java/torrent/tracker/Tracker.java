@@ -1,56 +1,37 @@
 package torrent.tracker;
 
-import torrent.GlobalConsts;
-
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-;
 
 /**
- * Created by the7winds on 26.03.16.
+ * Created by the7winds on 09.04.16.
  */
-
-/** Server */
-
 public class Tracker {
 
-    private FilesInfo filesInfo;
-    private ClientsInfo clientsInfo;
+    private static final Tracker INSTANCE = new Tracker();
 
-    private ServerSocket serverSocket;
-    private ExecutorService executorService;
-    private Runnable acceptor = () -> {
-        try {
-            while (true) {
-                Socket socket = serverSocket.accept();
-                TorrentHandler torrentHandler = new TorrentHandler(socket, filesInfo, clientsInfo);
-                executorService.execute(torrentHandler);
+    private static final String QUIT_CMD = "q";
+
+    private TrackerImpl tracker;
+
+    private Tracker() {}
+
+    public static Tracker getInstance() {
+        return INSTANCE;
+    }
+
+    public void main() throws IOException {
+        Notifications.start();
+
+        tracker = new TrackerImpl();
+        tracker.start();
+
+        while (true) {
+            String cmd = System.console().readLine();
+            if (cmd != null && cmd.equals(QUIT_CMD)) {
+                break;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-    };
 
-    public Tracker() throws IOException {
-        serverSocket = new ServerSocket(GlobalConsts.TRACKER_PORT);
-        filesInfo = new FilesInfo();
-        clientsInfo = new ClientsInfo();
-    }
-
-    /** starts tracker */
-
-    public void start() {
-        executorService = Executors.newCachedThreadPool();
-        executorService.submit(acceptor);
-    }
-
-    /** stops tracker */
-
-    public void stop() throws IOException {
-        serverSocket.close();
+        tracker.stop();
     }
 }
