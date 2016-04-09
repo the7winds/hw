@@ -8,10 +8,16 @@ import torrent.tracker.protocol.Upload;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.Inet4Address;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 
@@ -35,7 +41,7 @@ public class TorrentHandler implements Runnable {
     /** in minutes */
     private final long WAITING_UPDATE_TIMEOUT = 5;
     private Timer waitingUpdateTimeout;
-    private Map<byte[], Map<Short, RemoveFromTrackerTask>> addressToTask = new HashMap<>();
+    private Map<InetSocketAddress, RemoveFromTrackerTask> addressToTask = new HashMap<>();
     private class RemoveFromTrackerTask extends TimerTask {
 
         private byte[] ip;
@@ -48,8 +54,12 @@ public class TorrentHandler implements Runnable {
 
         @Override
         public void run() {
-            Notifications.removeClient(ip, port);
-            clientsInfo.removeClient(ip, port);
+            try {
+                Notifications.removeClient(ip, port);
+                clientsInfo.removeClient(ip, port);
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -121,18 +131,17 @@ public class TorrentHandler implements Runnable {
 
     private void handleRequest(Update.Request request) throws IOException {
         short port = request.getPort();
-
         byte[] ip = socket.getInetAddress().getAddress();
-        if (addressToTask.get(ip) != null) {
-            if (addressToTask.get(ip).get(port) != null) {
-                addressToTask.get(ip).get(port).cancel();
-                waitingUpdateTimeout.purge();
-            }
+
+        InetSocketAddress address = new InetSocketAddress(Inet4Address.getByAddress(ip), port);
+
+        if (addressToTask.get(address) != null) {
+            addressToTask.get(address).cancel();
+            waitingUpdateTimeout.purge();
         }
 
         RemoveFromTrackerTask removeFromTrackerTask = new RemoveFromTrackerTask(ip, port);
-        addressToTask.putIfAbsent(ip, new Hashtable<>());
-        addressToTask.get(ip).put(port, removeFromTrackerTask);
+        addressToTask.put(address, removeFromTrackerTask);
 
         clientsInfo.addClient(ip, port, request.getIds());
         waitingUpdateTimeout.schedule(removeFromTrackerTask, TimeUnit.MINUTES.toMillis(WAITING_UPDATE_TIMEOUT));

@@ -1,5 +1,6 @@
 package torrent.tracker;
 
+import java.net.*;
 import java.util.*;
 
 
@@ -8,7 +9,7 @@ import java.util.*;
  */
 public class ClientsInfo {
 
-    private final Map<byte[], Map<Short, Collection<Integer>>> clientInfoToIds = new HashMap<>();
+    private final Map<InetSocketAddress, Collection<Integer>> clientInfoToIds = new HashMap<>();
     private final Map<Integer, Collection<ClientInfo>> sources = new Hashtable<>();
 
     public final static class ClientInfo {
@@ -30,9 +31,9 @@ public class ClientsInfo {
         }
     }
 
-    synchronized void addClient(byte[] ip, short port, Collection<Integer> ids) {
-        clientInfoToIds.putIfAbsent(ip, new HashMap<>());
-        clientInfoToIds.get(ip).put(port, ids);
+    synchronized void addClient(byte[] ip, short port, Collection<Integer> ids) throws UnknownHostException {
+        InetSocketAddress address = new InetSocketAddress(Inet4Address.getByAddress(ip), port);
+        clientInfoToIds.put(address, ids);
         ClientInfo clientInfo = new ClientInfo(ip, port);
         for (int id : ids) {
             sources.putIfAbsent(id, new HashSet<>());
@@ -40,8 +41,9 @@ public class ClientsInfo {
         }
     }
 
-    synchronized void removeClient(byte[] ip, short port) {
-        Collection<Integer> ids = clientInfoToIds.get(ip).get(port);
+    synchronized void removeClient(byte[] ip, short port) throws UnknownHostException {
+        InetSocketAddress address = new InetSocketAddress(Inet4Address.getByAddress(ip), port);
+        Collection<Integer> ids = clientInfoToIds.get(address);
         clientInfoToIds.remove(ip);
         ClientInfo clientInfo = new ClientInfo(ip, port);
         for (Integer id : ids) {
