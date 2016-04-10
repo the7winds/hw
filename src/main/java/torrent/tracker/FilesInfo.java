@@ -47,14 +47,14 @@ public class FilesInfo {
         }
     }
 
-    public FilesInfo() throws IOException {
+    FilesInfo() throws IOException {
         INI = new Ini(FILES_INFO.toFile());
         nextId = INI.values().stream()
                 .mapToInt(section -> Integer.valueOf(section.get(Keys.ID.name())))
                 .max().orElse(0) + 1;
     }
 
-    public synchronized Map<Integer, FileInfo> getList() {
+    synchronized Map<Integer, FileInfo> getList() {
         return INI.values().stream()
                 .map(section ->
                         new FileInfo(Integer.valueOf(section.get(Keys.ID.name())),
@@ -65,7 +65,7 @@ public class FilesInfo {
 
     /** adds record to the file */
 
-    public synchronized int addFile(String name, long size) throws IOException {
+    synchronized int addFile(String name, long size) throws IOException {
         String id = Integer.toString(nextId);
 
         INI.add(id, Keys.ID.name(), Integer.toString(nextId));

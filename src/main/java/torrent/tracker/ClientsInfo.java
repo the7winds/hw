@@ -1,6 +1,8 @@
 package torrent.tracker;
 
-import java.net.*;
+import java.net.Inet4Address;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 
 
@@ -10,7 +12,7 @@ import java.util.*;
 public class ClientsInfo {
 
     private final Map<InetSocketAddress, Collection<Integer>> clientInfoToIds = new HashMap<>();
-    private final Map<Integer, Collection<ClientInfo>> sources = new Hashtable<>();
+    private final Map<Integer, Collection<ClientInfo>> sources = new HashMap<>();
 
     public final static class ClientInfo {
         public byte[] ip;

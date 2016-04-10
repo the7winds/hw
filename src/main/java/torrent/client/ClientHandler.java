@@ -14,13 +14,11 @@ import java.net.Socket;
  */
 public class ClientHandler implements Runnable {
 
-    private final Socket socket;
     private final DataInputStream dataInputStream;
     private final DataOutputStream dataOutputStream;
     private final AvailablePartsProvider partsProvider;
 
     public ClientHandler(Socket socket, AvailablePartsProvider partsInfo) throws IOException {
-        this.socket = socket;
         this.partsProvider = partsInfo;
         dataInputStream = new DataInputStream(socket.getInputStream());
         dataOutputStream = new DataOutputStream(socket.getOutputStream());

@@ -12,8 +12,6 @@ import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
@@ -30,9 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 public class TorrentHandler implements Runnable {
 
-    private final static String TAG = "TORRENT_TMP_FILE";
     private final Socket socket;
-    private final Path tmp;
     private final DataInputStream dataInputStream;
     private final DataOutputStream dataOutputStream;
     private final FilesInfo filesInfo;
@@ -47,7 +43,7 @@ public class TorrentHandler implements Runnable {
         private byte[] ip;
         private short port;
 
-        public RemoveFromTrackerTask(byte[] ip, short port) {
+        RemoveFromTrackerTask(byte[] ip, short port) {
             this.ip = ip;
             this.port = port;
         }
@@ -64,12 +60,11 @@ public class TorrentHandler implements Runnable {
     }
 
 
-    public TorrentHandler(Socket socket, FilesInfo filesInfo, ClientsInfo clientsInfo) throws IOException {
+    TorrentHandler(Socket socket, FilesInfo filesInfo, ClientsInfo clientsInfo) throws IOException {
         this.socket = socket;
         this.filesInfo = filesInfo;
         this.clientsInfo = clientsInfo;
         waitingUpdateTimeout = new Timer();
-        tmp = Files.createTempFile(TAG, null);
         dataInputStream = new DataInputStream(socket.getInputStream());
         dataOutputStream = new DataOutputStream(socket.getOutputStream());
     }

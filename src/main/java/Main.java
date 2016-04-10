@@ -16,7 +16,7 @@ public class Main {
     private static final String ERROR_MESSAGE = "wrong mode";
 
     public static void main(String[] args) throws CmdLineException, IOException {
-        CmdLineParser parser = new CmdLineParser(new ArgsAndConsts());
+        final CmdLineParser parser = new CmdLineParser(new ArgsAndConsts());
         parser.parseArgument(args);
 
         switch (ArgsAndConsts.mode) {

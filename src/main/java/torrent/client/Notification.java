@@ -9,10 +9,6 @@ final class Notification {
         System.out.printf("ADDED WITH ID=%d\n", id);
     }
 
-    static void downloadFailed() {
-        System.out.println("DOWNLOAD FAILED");
-    }
-
     static void downloaded() {
         System.out.println("DOWNLOADED");
     }
