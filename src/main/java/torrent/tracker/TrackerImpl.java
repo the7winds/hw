@@ -3,7 +3,8 @@ package torrent.tracker;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -25,7 +26,8 @@ public class TrackerImpl {
 
     private ServerSocket serverSocket;
     private ExecutorService executorService;
-    private Runnable acceptor = () -> {
+    private List<Socket> acceptedSockets;
+    private final Runnable acceptor = () -> {
         try {
             while (true) {
                 Socket socket = serverSocket.accept();
@@ -47,19 +49,17 @@ public class TrackerImpl {
     /** starts tracker */
 
     public void start() {
+        acceptedSockets = new LinkedList<>();
         executorService = Executors.newCachedThreadPool();
         executorService.submit(acceptor);
     }
 
     /** stops tracker */
 
-    public void stop() {
-        try {
-            serverSocket.close();
-        } catch (SocketException ignored) {
-
-        } catch (IOException e) {
-            e.printStackTrace();
+    public void stop() throws IOException {
+        for (Socket socket : acceptedSockets) {
+            socket.close();
         }
+        serverSocket.close();
     }
 }
