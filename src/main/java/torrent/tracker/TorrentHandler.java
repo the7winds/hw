@@ -79,7 +79,7 @@ public class TorrentHandler implements Runnable {
                         Notifications.listGet(socket);
                         List.Request listRequest = new List.Request();
                         listRequest.read(dataInputStream);
-                        handleRequest(listRequest);
+                        handleRequest();
                         Notifications.listDone(socket);
                         break;
                     case 2:
@@ -112,7 +112,7 @@ public class TorrentHandler implements Runnable {
         }
     }
 
-    private void handleRequest(List.Request request) throws IOException {
+    private void handleRequest() throws IOException {
         new List.Answer(filesInfo.getList()).write(dataOutputStream);
     }
 

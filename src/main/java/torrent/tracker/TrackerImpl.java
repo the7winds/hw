@@ -31,6 +31,7 @@ public class TrackerImpl {
         try {
             while (true) {
                 Socket socket = serverSocket.accept();
+                acceptedSockets.add(socket);
                 TorrentHandler torrentHandler = new TorrentHandler(socket, filesInfo, clientsInfo);
                 Notifications.accepted(socket);
                 executorService.execute(torrentHandler);
