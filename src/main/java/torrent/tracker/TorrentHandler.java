@@ -72,7 +72,7 @@ public class TorrentHandler implements Runnable {
     @Override
     public void run() {
         try {
-            while (true) {
+            while (!socket.isClosed()) {
                 byte requestTag = dataInputStream.readByte();
                 switch (requestTag) {
                     case 1:

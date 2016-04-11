@@ -21,7 +21,7 @@ public class Client {
     private static final String DOWNLOAD_CMD = "ld";
     private static final String QUIT_CMD = "q";
 
-    private ClientNetwork client;
+    private torrent.client.clientNetworkImpl.ClientNetwork client;
 
     private Client() {
     }
@@ -31,9 +31,8 @@ public class Client {
     }
 
     public void main() throws IOException {
-        client = new ClientImpl(ArgsAndConsts.port);
+        client = new torrent.client.clientNetworkImpl.ClientNetworkImpl(ArgsAndConsts.port);
         client.connect(ArgsAndConsts.host);
-        Notification.connected();
 
         while (true) {
             String line = System.console().readLine();
@@ -52,7 +51,8 @@ public class Client {
                     downloadHandle(cmdArgs);
                     break;
                 case QUIT_CMD:
-                    System.exit(0);
+                    client.disconnect();
+                    return;
                 default:
                     System.out.println(CMD_ERR_MESSAGE);
             }
@@ -73,8 +73,7 @@ public class Client {
 
     void uploadHandle(String[] cmdArgs) {
         try {
-            int id = client.upload(new File(cmdArgs[0]));
-            Notification.added(id);
+            client.upload(new File(cmdArgs[0]));
         } catch (IOException e) {
             System.out.printf(e.getMessage());
         }
@@ -84,6 +83,5 @@ public class Client {
         int id = Integer.valueOf(cmdArgs[0]);
         String pathname = cmdArgs[1];
         client.download(id, pathname);
-        Notification.downloaded();
     }
 }

@@ -1,16 +1,14 @@
-package torrent.client;
+package torrent.client.clientNetworkImpl;
 
 import org.ini4j.Ini;
 import torrent.ArgsAndConsts;
 
-import java.io.DataInputStream;
-import java.io.EOFException;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.RandomAccess;
 import java.util.stream.Collectors;
 
 import static torrent.ArgsAndConsts.BLOCK_SIZE;
@@ -50,11 +48,11 @@ class AvailablePartsProvider {
     synchronized byte[] getPart(int id, int part) throws IOException {
         byte[] content = new byte[BLOCK_SIZE];
         Path path = Paths.get(INI.get(getSectionName(id, part), Keys.PART_PATH.name()));
-        DataInputStream partInputStream = new DataInputStream(Files.newInputStream(path));
-        partInputStream.skipBytes(part * BLOCK_SIZE);
+        RandomAccessFile rFile = new RandomAccessFile(path.toFile(), "rw");
+        rFile.seek(part * BLOCK_SIZE);
 
         try {
-            partInputStream.readFully(content);
+            rFile.readFully(content);
         } catch (EOFException ignored) {
         }
 

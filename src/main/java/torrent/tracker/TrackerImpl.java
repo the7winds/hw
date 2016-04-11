@@ -3,6 +3,7 @@ package torrent.tracker;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -29,7 +30,7 @@ public class TrackerImpl {
     private List<Socket> acceptedSockets;
     private final Runnable acceptor = () -> {
         try {
-            while (true) {
+            while (!serverSocket.isClosed()) {
                 Socket socket = serverSocket.accept();
                 acceptedSockets.add(socket);
                 TorrentHandler torrentHandler = new TorrentHandler(socket, filesInfo, clientsInfo);

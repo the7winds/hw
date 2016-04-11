@@ -4,6 +4,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import torrent.ArgsAndConsts;
+import torrent.client.clientNetworkImpl.ClientNetwork;
+import torrent.client.clientNetworkImpl.ClientNetworkImpl;
+import torrent.client.clientNetworkImpl.DownloadStatus;
 import torrent.tracker.FilesInfo.FileInfo;
 import torrent.tracker.TrackerImpl;
 
@@ -14,7 +17,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -54,7 +56,7 @@ public class ClientTest {
     @Test
     public void list() throws Exception {
         TrackerImpl trackerImpl = new TrackerImpl();
-        ClientNetwork client = new ClientImpl(port0);
+        ClientNetwork client = new ClientNetworkImpl(port0);
 
         trackerImpl.start();
         client.connect(host);
@@ -72,7 +74,7 @@ public class ClientTest {
     @Test
     public void upload() throws Exception {
         TrackerImpl trackerImpl = new TrackerImpl();
-        ClientNetwork client = new ClientImpl(port0);
+        ClientNetwork client = new ClientNetworkImpl(port0);
 
         trackerImpl.start();
         client.connect(host);
@@ -90,8 +92,8 @@ public class ClientTest {
     @Test
     public void download() throws Exception {
         TrackerImpl trackerImpl = new TrackerImpl();
-        ClientNetwork loader = new ClientImpl(port0);
-        ClientNetwork downloader = new ClientImpl(port1);
+        ClientNetwork loader = new ClientNetworkImpl(port0);
+        ClientNetwork downloader = new ClientNetworkImpl(port1);
 
         trackerImpl.start();
         loader.connect(host);
@@ -101,7 +103,9 @@ public class ClientTest {
         Path dest = TEST_RESOURCES.resolve("downloads").resolve("2.txt");
 
         int id = loader.upload(file);
-        downloader.download(id, dest.toString());
+        DownloadStatus status = downloader.download(id, dest.toString());
+
+        while (!status.isDownloaded());
 
         downloader.disconnect();
         loader.disconnect();
@@ -113,8 +117,8 @@ public class ClientTest {
     @Test
     public void downloadBig() throws Exception {
         TrackerImpl trackerImpl = new TrackerImpl();
-        ClientNetwork loader = new ClientImpl(port0);
-        ClientNetwork downloader = new ClientImpl(port1);
+        ClientNetwork loader = new ClientNetworkImpl(port0);
+        ClientNetwork downloader = new ClientNetworkImpl(port1);
 
         trackerImpl.start();
         loader.connect(host);
@@ -124,7 +128,9 @@ public class ClientTest {
         File file = TEST_RESOURCES.resolve("3.txt").toFile();
 
         int id = loader.upload(file);
-        downloader.download(id, dest.toString());
+        DownloadStatus downloadStatus = downloader.download(id, dest.toString());
+
+        while (!downloadStatus.isDownloaded());
 
         downloader.disconnect();
         loader.disconnect();
