@@ -21,7 +21,7 @@ public class Client {
     private static final String DOWNLOAD_CMD = "ld";
     private static final String QUIT_CMD = "q";
 
-    private torrent.client.clientNetworkImpl.ClientNetwork client;
+    private ClientNetwork client;
 
     private Client() {
     }

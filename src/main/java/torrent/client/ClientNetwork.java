@@ -1,5 +1,6 @@
-package torrent.client.clientNetworkImpl;
+package torrent.client;
 
+import torrent.client.clientNetworkImpl.DownloadStatus;
 import torrent.tracker.FilesInfo;
 
 import java.io.File;

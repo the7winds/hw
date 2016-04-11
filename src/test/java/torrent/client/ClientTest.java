@@ -4,7 +4,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import torrent.ArgsAndConsts;
-import torrent.client.clientNetworkImpl.ClientNetwork;
 import torrent.client.clientNetworkImpl.ClientNetworkImpl;
 import torrent.client.clientNetworkImpl.DownloadStatus;
 import torrent.tracker.FilesInfo.FileInfo;

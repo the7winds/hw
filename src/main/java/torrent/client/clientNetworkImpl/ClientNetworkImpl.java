@@ -1,5 +1,7 @@
 package torrent.client.clientNetworkImpl;
 
+import torrent.client.ClientNetwork;
+
 import java.io.*;
 import java.util.Collection;
 import java.util.concurrent.Executor;
