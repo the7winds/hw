@@ -19,7 +19,7 @@ public class Tracker {
         return INSTANCE;
     }
 
-    public void main() throws IOException {
+    public void main() throws IOException, InterruptedException {
         Notifications.start();
 
         tracker = new TrackerImpl();

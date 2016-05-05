@@ -3,7 +3,7 @@ package torrent.client.clientNetworkImpl;
 import torrent.client.protocol.Get;
 import torrent.client.protocol.Stat;
 import torrent.tracker.ClientsInfo;
-import torrent.tracker.FilesInfo;
+import torrent.tracker.FilesRegister;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -23,13 +23,13 @@ import static torrent.tracker.TrackerImpl.BLOCK_SIZE;
 class DownloadHandler implements Runnable {
 
     private final ClientNetworkImpl client;
-    private final FilesInfo.FileInfo fileInfo;
+    private final FilesRegister.FileInfo fileInfo;
     private final File file;
     private final Set<Integer> wantedBlocks;
     private final DownloadStatus status;
     private Set<Integer> downloadedBlocks;
 
-    DownloadHandler(ClientNetworkImpl client, DownloadStatus status, FilesInfo.FileInfo fileInfo, String pathname) {
+    DownloadHandler(ClientNetworkImpl client, DownloadStatus status, FilesRegister.FileInfo fileInfo, String pathname) {
         this.client = client;
         this.fileInfo = fileInfo;
         this.status = status;

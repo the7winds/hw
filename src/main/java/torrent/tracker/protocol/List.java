@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static torrent.tracker.FilesInfo.FileInfo;
+import static torrent.tracker.FilesRegister.FileInfo;
 
 /**
  * Created by the7winds on 26.03.16.

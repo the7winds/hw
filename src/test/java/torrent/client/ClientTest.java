@@ -6,7 +6,7 @@ import org.junit.Test;
 import torrent.ArgsAndConsts;
 import torrent.client.clientNetworkImpl.ClientNetworkImpl;
 import torrent.client.clientNetworkImpl.DownloadStatus;
-import torrent.tracker.FilesInfo.FileInfo;
+import torrent.tracker.FilesRegister.FileInfo;
 import torrent.tracker.TrackerImpl;
 
 import java.io.File;
@@ -31,21 +31,12 @@ public class ClientTest {
     @Before
     public void before() throws IOException {
         cleanFiles();
-        Path filesInfoNotEmpty = TEST_RESOURCES.resolve("inifiles").resolve("filesInfoNotEmpty.ini");
-        Path filesInfo = ArgsAndConsts.RESOURCES.resolve("filesInfo.ini");
-        filesInfo.toFile().delete();
-        Files.copy(filesInfoNotEmpty, filesInfo);
     }
 
     @After
     public void cleanFiles() throws IOException {
-        File filesInfo = ArgsAndConsts.RESOURCES.resolve("filesInfo.ini").toFile();
-        filesInfo.delete();
-        filesInfo.createNewFile();
-
-        File availableParts = ArgsAndConsts.RESOURCES.resolve("availableParts.ini").toFile();
-        availableParts.delete();
-        availableParts.createNewFile();
+        ArgsAndConsts.RESOURCES.resolve("files register").toFile().delete();
+        ArgsAndConsts.RESOURCES.resolve("available parts register").toFile().delete();
 
         for (File file : TEST_RESOURCES.resolve("downloads").toFile().listFiles()) {
             file.delete();

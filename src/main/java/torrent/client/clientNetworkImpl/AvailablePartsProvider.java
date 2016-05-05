@@ -1,15 +1,13 @@
 package torrent.client.clientNetworkImpl;
 
-import org.ini4j.Ini;
 import torrent.ArgsAndConsts;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.RandomAccess;
-import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static torrent.ArgsAndConsts.BLOCK_SIZE;
 
@@ -18,63 +16,96 @@ import static torrent.ArgsAndConsts.BLOCK_SIZE;
  */
 class AvailablePartsProvider {
 
-    private static final Path AVAILABLE_PARTS_INFO = ArgsAndConsts.RESOURCES.resolve("availableParts.ini");
-    private final Ini INI;
-
-    private enum Keys {
-        ID,
-        PART_NUM,
-        PART_PATH,
-    }
+    private final static String registerFilename = "available parts register";
+    private final Map<Integer, AvailablePartsInfo> register = new ConcurrentHashMap<>();
 
     AvailablePartsProvider() throws IOException {
-        INI = new Ini(AVAILABLE_PARTS_INFO.toFile());
+        try {
+            DataInput registerDataInput = new DataInputStream(new FileInputStream(registerFilename));
+            while (true) {
+                int id = registerDataInput.readInt();
+                String name = registerDataInput.readUTF();
+                String pathname = registerDataInput.readUTF();
+                Set<Integer> availableParts = new TreeSet<>();
+                for (int i = 0, n = registerDataInput.readInt(); i < n; ++i) {
+                    availableParts.add(registerDataInput.readInt());
+                }
+                register.put(id, new AvailablePartsInfo(id, name, new File(pathname), availableParts));
+            }
+        } catch (FileNotFoundException ignored) {}
     }
 
     synchronized Collection<Integer> getAllIds() {
-        return INI.values().stream()
-                .map(section -> Integer.valueOf(section.get(Keys.ID.name())))
-                .distinct()
-                .collect(Collectors.toList());
+        return register.keySet();
     }
 
     synchronized Collection<Integer> getAvailableById(int id) {
-        return INI.values().stream()
-                .filter(section -> Integer.valueOf(section.get(Keys.ID.name())) == id)
-                .map(section -> Integer.valueOf(section.get(Keys.PART_NUM.name())))
-                .collect(Collectors.toList());
+        return register.get(id).availableParts;
     }
 
     synchronized byte[] getPart(int id, int part) throws IOException {
-        byte[] content = new byte[BLOCK_SIZE];
-        Path path = Paths.get(INI.get(getSectionName(id, part), Keys.PART_PATH.name()));
-        RandomAccessFile rFile = new RandomAccessFile(path.toFile(), "rw");
+        RandomAccessFile rFile = new RandomAccessFile(register.get(id).file.getPath(), "rw");
         rFile.seek(part * BLOCK_SIZE);
+        byte[] content = new byte[BLOCK_SIZE];
 
         try {
             rFile.readFully(content);
-        } catch (EOFException ignored) {
-        }
+        } catch (EOFException ignored) {}
 
         return content;
     }
 
-    private String getSectionName(int id, int part) {
-        return id + ":" + part;
+    synchronized void addPart(int id, int part) throws IOException {
+        register.get(id).availableParts.add(part);
     }
 
-    synchronized void addPart(int id, int part, File file) throws IOException {
-        String sectionName = getSectionName(id, part);
-        INI.add(sectionName, Keys.ID.name(), Integer.toString(id));
-        INI.add(sectionName, Keys.PART_NUM.name(), Integer.toString(part));
-        INI.add(sectionName, Keys.PART_PATH.name(), file.getAbsolutePath());
-        INI.store();
+    synchronized void addPart(int id, int part, File dest) throws IOException {
+        register.getOrDefault(id, new AvailablePartsInfo(id, dest.getName(), dest)).availableParts.add(part);
     }
 
     synchronized void addFile(int id, File file) throws IOException {
-        for (int n = (int) (file.length() / BLOCK_SIZE +
-                (file.length() % BLOCK_SIZE != 0 ? 1 : 0)), i = 0; i < n; ++i) {
-            addPart(id, i, file);
+        register.put(id, new AvailablePartsInfo(id, file.getName(), file));
+        for (int part = 0; part < file.length() / ArgsAndConsts.BLOCK_SIZE
+                + (file.length() % ArgsAndConsts.BLOCK_SIZE == 0 ? 0 : 1); ++part) {
+            addPart(id, part);
+        }
+    }
+
+    static class AvailablePartsInfo {
+        final int id;
+        final String name;
+        final File file;
+        final Set<Integer> availableParts;
+
+        public AvailablePartsInfo(int id, String name, File file) {
+            this.id = id;
+            this.name = name;
+            this.file = file;
+            availableParts = new TreeSet<>();
+        }
+
+        public AvailablePartsInfo(int id, String name, File file, Set<Integer> availableParts) {
+            this.id = id;
+            this.name = name;
+            this.file = file;
+            this.availableParts = availableParts;
+        }
+    }
+
+    void store() throws IOException {
+        File registerFile = ArgsAndConsts.RESOURCES.resolve(registerFilename).toFile();
+        registerFile.createNewFile();
+        try (DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(registerFile))) {
+            for (AvailablePartsInfo entry : register.values()) {
+                dataOutputStream.writeInt(entry.id);
+                dataOutputStream.writeUTF(entry.file.getName());
+                dataOutputStream.writeUTF(entry.file.getPath());
+
+                dataOutputStream.writeInt(entry.availableParts.size());
+                for (Integer part : entry.availableParts) {
+                    dataOutputStream.writeInt(part);
+                }
+            }
         }
     }
 }

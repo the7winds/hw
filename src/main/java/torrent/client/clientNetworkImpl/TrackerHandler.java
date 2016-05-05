@@ -1,7 +1,7 @@
 package torrent.client.clientNetworkImpl;
 
 import torrent.tracker.ClientsInfo;
-import torrent.tracker.FilesInfo;
+import torrent.tracker.FilesRegister;
 import torrent.tracker.protocol.List;
 import torrent.tracker.protocol.Sources;
 import torrent.tracker.protocol.Update;
@@ -54,7 +54,7 @@ class TrackerHandler {
         Notification.connected();
     }
 
-    synchronized Map<Integer, FilesInfo.FileInfo> execList() throws IOException {
+    synchronized Map<Integer, FilesRegister.FileInfo> execList() throws IOException {
         new List.Request().write(clientTrackerDataOutputStream);
         List.Answer answer = new List.Answer();
         answer.read(clientTrackerDataInputStream);

@@ -1,7 +1,7 @@
 package torrent.client;
 
 import torrent.client.clientNetworkImpl.DownloadStatus;
-import torrent.tracker.FilesInfo;
+import torrent.tracker.FilesRegister;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,7 +14,7 @@ public interface ClientNetwork {
 
     void connect(String trackerAddress) throws IOException;
 
-    Collection<FilesInfo.FileInfo> list() throws IOException;
+    Collection<FilesRegister.FileInfo> list() throws IOException;
 
     DownloadStatus download(int id, String pathname);
 

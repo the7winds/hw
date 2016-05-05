@@ -15,7 +15,7 @@ public class Main {
     private static final String TRACKER_MODE = "tracker";
     private static final String ERROR_MESSAGE = "wrong mode";
 
-    public static void main(String[] args) throws CmdLineException, IOException {
+    public static void main(String[] args) throws CmdLineException, IOException, InterruptedException {
         final CmdLineParser parser = new CmdLineParser(new ArgsAndConsts());
         parser.parseArgument(args);
 

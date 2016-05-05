@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import static torrent.tracker.FilesInfo.FileInfo;
+import static torrent.tracker.FilesRegister.FileInfo;
 
 
 public class ClientNetworkImpl implements ClientNetwork {
@@ -63,6 +63,7 @@ public class ClientNetworkImpl implements ClientNetwork {
     public void disconnect() throws IOException {
         trackerHandler.disconnect();
         clientsHandler.stop();
+        availablePartsProvider.store();
     }
 
     TrackerHandler getTrackerHandler() {

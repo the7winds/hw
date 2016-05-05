@@ -31,7 +31,7 @@ public class TorrentHandler implements Runnable {
     private final Socket socket;
     private final DataInputStream dataInputStream;
     private final DataOutputStream dataOutputStream;
-    private final FilesInfo filesInfo;
+    private final FilesRegister filesRegister;
     private final ClientsInfo clientsInfo;
 
     /** in minutes */
@@ -60,9 +60,9 @@ public class TorrentHandler implements Runnable {
     }
 
 
-    TorrentHandler(Socket socket, FilesInfo filesInfo, ClientsInfo clientsInfo) throws IOException {
+    TorrentHandler(Socket socket, FilesRegister filesRegister, ClientsInfo clientsInfo) throws IOException {
         this.socket = socket;
-        this.filesInfo = filesInfo;
+        this.filesRegister = filesRegister;
         this.clientsInfo = clientsInfo;
         waitingUpdateTimeout = new Timer();
         dataInputStream = new DataInputStream(socket.getInputStream());
@@ -113,11 +113,11 @@ public class TorrentHandler implements Runnable {
     }
 
     private void handleRequest() throws IOException {
-        new List.Answer(filesInfo.getList()).write(dataOutputStream);
+        new List.Answer(filesRegister.getRegister()).write(dataOutputStream);
     }
 
     private void handleRequest(Upload.Request request) throws IOException {
-        new Upload.Answer(filesInfo.addFile(request.getName(), request.getSize())).write(dataOutputStream);
+        new Upload.Answer(filesRegister.addFile(request.getName(), request.getSize())).write(dataOutputStream);
     }
 
     private void handleRequest(Sources.Request request) throws IOException {

@@ -1,7 +1,7 @@
 package torrent.client;
 
 import torrent.ArgsAndConsts;
-import torrent.tracker.FilesInfo;
+import torrent.tracker.FilesRegister;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,7 +21,7 @@ public class Client {
     private static final String DOWNLOAD_CMD = "ld";
     private static final String QUIT_CMD = "q";
 
-    private ClientNetwork client;
+    private ClientNetwork clientNetwork;
 
     private Client() {
     }
@@ -31,8 +31,8 @@ public class Client {
     }
 
     public void main() throws IOException {
-        client = new torrent.client.clientNetworkImpl.ClientNetworkImpl(ArgsAndConsts.port);
-        client.connect(ArgsAndConsts.host);
+        clientNetwork = new torrent.client.clientNetworkImpl.ClientNetworkImpl(ArgsAndConsts.port);
+        clientNetwork.connect(ArgsAndConsts.host);
 
         while (true) {
             String line = System.console().readLine();
@@ -51,7 +51,7 @@ public class Client {
                     downloadHandle(cmdArgs);
                     break;
                 case QUIT_CMD:
-                    client.disconnect();
+                    clientNetwork.disconnect();
                     return;
                 default:
                     System.out.println(CMD_ERR_MESSAGE);
@@ -61,9 +61,9 @@ public class Client {
 
     void listHandle() {
         try {
-            Collection<FilesInfo.FileInfo> list = client.list();
+            Collection<FilesRegister.FileInfo> list = clientNetwork.list();
             System.out.printf("ID\tNAME\tSIZE\n");
-            for (FilesInfo.FileInfo info : list) {
+            for (FilesRegister.FileInfo info : list) {
                 System.out.printf("%d\t%s\t%d\n", info.id, info.name, info.size);
             }
         } catch (IOException e) {
@@ -73,7 +73,7 @@ public class Client {
 
     void uploadHandle(String[] cmdArgs) {
         try {
-            client.upload(new File(cmdArgs[0]));
+            clientNetwork.upload(new File(cmdArgs[0]));
         } catch (IOException e) {
             System.out.printf(e.getMessage());
         }
@@ -82,6 +82,6 @@ public class Client {
     void downloadHandle(String[] cmdArgs) {
         int id = Integer.valueOf(cmdArgs[0]);
         String pathname = cmdArgs[1];
-        client.download(id, pathname);
+        clientNetwork.download(id, pathname);
     }
 }

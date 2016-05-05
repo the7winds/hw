@@ -3,12 +3,11 @@ package torrent.tracker;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -22,18 +21,20 @@ public class TrackerImpl {
     public static final int BLOCK_SIZE = 10 * (1 << 20); // 10 MB
     public static final short TRACKER_PORT = 8081;
 
-    private FilesInfo filesInfo;
+    private FilesRegister filesRegister;
     private ClientsInfo clientsInfo;
 
     private ServerSocket serverSocket;
-    private ExecutorService executorService;
     private List<Socket> acceptedSockets;
+
+    private ExecutorService executorService;
+
     private final Runnable acceptor = () -> {
         try {
             while (!serverSocket.isClosed()) {
                 Socket socket = serverSocket.accept();
                 acceptedSockets.add(socket);
-                TorrentHandler torrentHandler = new TorrentHandler(socket, filesInfo, clientsInfo);
+                TorrentHandler torrentHandler = new TorrentHandler(socket, filesRegister, clientsInfo);
                 Notifications.accepted(socket);
                 executorService.execute(torrentHandler);
             }
@@ -44,7 +45,7 @@ public class TrackerImpl {
 
     public TrackerImpl() throws IOException {
         serverSocket = new ServerSocket(TRACKER_PORT);
-        filesInfo = new FilesInfo();
+        filesRegister = new FilesRegister();
         clientsInfo = new ClientsInfo();
     }
 
@@ -58,10 +59,13 @@ public class TrackerImpl {
 
     /** stops tracker */
 
-    public void stop() throws IOException {
+    public void stop() throws IOException, InterruptedException {
         for (Socket socket : acceptedSockets) {
             socket.close();
         }
         serverSocket.close();
+        executorService.shutdown();
+        executorService.awaitTermination(1, TimeUnit.MINUTES);
+        filesRegister.store();
     }
 }
