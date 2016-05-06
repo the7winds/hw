@@ -11,10 +11,10 @@ import torrent.tracker.TrackerImpl;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertTrue;
 
@@ -30,6 +30,7 @@ public class ClientTest {
 
     @Before
     public void before() throws IOException {
+        Logger.getGlobal().setFilter(record -> true);
         cleanFiles();
     }
 
@@ -37,32 +38,11 @@ public class ClientTest {
     public void cleanFiles() throws IOException {
         ArgsAndConsts.RESOURCES.resolve("files register").toFile().delete();
         ArgsAndConsts.RESOURCES.resolve("available parts register").toFile().delete();
-
-        for (File file : TEST_RESOURCES.resolve("downloads").toFile().listFiles()) {
-            file.delete();
-        }
+        TEST_RESOURCES.resolve("download.txt").toFile().delete();
     }
 
     @Test
-    public void list() throws Exception {
-        TrackerImpl trackerImpl = new TrackerImpl();
-        ClientNetwork client = new ClientNetworkImpl(port0);
-
-        trackerImpl.start();
-        client.connect(host);
-
-        Collection<FileInfo> files = client.list();
-
-        client.disconnect();
-        trackerImpl.stop();
-
-        assertTrue(files.contains(new FileInfo(0, "0.txt", 0)));
-        assertTrue(files.contains(new FileInfo(1, "1.txt", 10)));
-        assertTrue(files.contains(new FileInfo(2, "1.txt", 10)));
-    }
-
-    @Test
-    public void upload() throws Exception {
+    public void listAndUpload() throws Exception {
         TrackerImpl trackerImpl = new TrackerImpl();
         ClientNetwork client = new ClientNetworkImpl(port0);
 
@@ -90,7 +70,7 @@ public class ClientTest {
         downloader.connect(host);
 
         File file = TEST_RESOURCES.resolve("2.txt").toFile();
-        Path dest = TEST_RESOURCES.resolve("downloads").resolve("2.txt");
+        Path dest = TEST_RESOURCES.resolve("download.txt");
 
         int id = loader.upload(file);
         DownloadStatus status = downloader.download(id, dest.toString());
@@ -114,7 +94,7 @@ public class ClientTest {
         loader.connect(host);
         downloader.connect(host);
 
-        Path dest = TEST_RESOURCES.resolve("downloads").resolve("3.txt");
+        Path dest = TEST_RESOURCES.resolve("download.txt");
         File file = TEST_RESOURCES.resolve("3.txt").toFile();
 
         int id = loader.upload(file);

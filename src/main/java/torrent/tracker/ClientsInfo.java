@@ -1,8 +1,7 @@
 package torrent.tracker;
 
-import java.net.Inet4Address;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
+import java.net.SocketAddress;
 import java.util.*;
 
 
@@ -11,50 +10,28 @@ import java.util.*;
  */
 public class ClientsInfo {
 
-    private final Map<InetSocketAddress, Collection<Integer>> clientInfoToIds = new HashMap<>();
-    private final Map<Integer, Collection<ClientInfo>> sources = new HashMap<>();
+    private final Map<SocketAddress, Collection<Integer>> clientInfoToIds =
+            Collections.synchronizedMap(new HashMap<>());
+    private final Map<Integer, Collection<InetSocketAddress>> sources =
+            Collections.synchronizedMap(new HashMap<>());
 
-    public final static class ClientInfo {
-        public byte[] ip;
-        public short port;
 
-        public ClientInfo(byte[] ip, short port) {
-            this.ip = ip;
-            this.port = port;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof ClientInfo) {
-                ClientInfo clientInfo = (ClientInfo) obj;
-                return port == clientInfo.port && Arrays.equals(ip, clientInfo.ip);
-            }
-            return false;
-        }
-    }
-
-    synchronized void addClient(byte[] ip, short port, Collection<Integer> ids) throws UnknownHostException {
-        InetSocketAddress address = new InetSocketAddress(Inet4Address.getByAddress(ip), port);
-        clientInfoToIds.put(address, ids);
-        ClientInfo clientInfo = new ClientInfo(ip, port);
+    synchronized void addClient(InetSocketAddress socketAddress, Collection<Integer> ids) {
+        clientInfoToIds.put(socketAddress, ids);
         for (int id : ids) {
-            sources.putIfAbsent(id, new HashSet<>());
-            sources.get(id).add(clientInfo);
+            sources.computeIfAbsent(id, (k) -> new HashSet<>()).add(socketAddress);
         }
     }
 
-    synchronized void removeClient(byte[] ip, short port) throws UnknownHostException {
-        InetSocketAddress address = new InetSocketAddress(Inet4Address.getByAddress(ip), port);
-        Collection<Integer> ids = clientInfoToIds.get(address);
-        clientInfoToIds.remove(ip);
-        ClientInfo clientInfo = new ClientInfo(ip, port);
+    synchronized void removeClient(InetSocketAddress socketAddress) {
+        Collection<Integer> ids = clientInfoToIds.get(socketAddress);
+        clientInfoToIds.remove(socketAddress);
         for (Integer id : ids) {
-            sources.get(id).remove(clientInfo);
+            sources.get(id).remove(socketAddress);
         }
     }
 
-    synchronized Collection<ClientInfo> getSources(int id) {
-        sources.putIfAbsent(id, new HashSet<>());
-        return sources.get(id);
+    synchronized Collection<InetSocketAddress> getSources(int id) {
+        return new HashSet<>(sources.getOrDefault(id, new HashSet<>()));
     }
 }

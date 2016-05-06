@@ -2,20 +2,17 @@ package torrent.client.clientNetworkImpl;
 
 import torrent.client.protocol.Get;
 import torrent.client.protocol.Stat;
-import torrent.tracker.ClientsInfo;
 import torrent.tracker.FilesRegister;
 
 import java.io.*;
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static torrent.tracker.TrackerImpl.BLOCK_SIZE;
+import static torrent.ArgsAndConsts.BLOCK_SIZE;
 
 /**
  * Created by the7winds on 11.04.16.
@@ -27,15 +24,13 @@ class DownloadHandler implements Runnable {
     private final File file;
     private final Set<Integer> wantedBlocks;
     private final DownloadStatus status;
-    private Set<Integer> downloadedBlocks;
 
     DownloadHandler(ClientNetworkImpl client, DownloadStatus status, FilesRegister.FileInfo fileInfo, String pathname) {
         this.client = client;
         this.fileInfo = fileInfo;
         this.status = status;
         file = new File(pathname);
-        wantedBlocks = getWantedBlocks();
-        downloadedBlocks = new HashSet<>();
+        wantedBlocks = Collections.synchronizedSet(getWantedBlocks());
     }
 
     @Override
@@ -48,14 +43,10 @@ class DownloadHandler implements Runnable {
             }
 
             while (!wantedBlocks.isEmpty()) {
-                Collection<ClientsInfo.ClientInfo> sources = client.getTrackerHandler().execSources(fileInfo.id);
-                for (ClientsInfo.ClientInfo clientInfo : sources) {
-                    for (int block : wantedBlocks) {
-                        client.getDownloads().execute(new DownloadTask(clientInfo, fileInfo.id, block));
-                    }
+                Collection<InetSocketAddress> sources = client.getTrackerHandler().execSources(fileInfo.id);
+                for (InetSocketAddress clientInfo : sources) {
+                    client.getDownloadsExecutor().execute(new DownloadTask(clientInfo, fileInfo.id, wantedBlocks));
                 }
-
-                wantedBlocks.removeAll(downloadedBlocks);
 
                 synchronized (this) {
                     try {
@@ -79,30 +70,39 @@ class DownloadHandler implements Runnable {
                 .collect(Collectors.toSet());
     }
 
-    class DownloadTask implements Runnable {
+    private class DownloadTask implements Runnable {
 
         private final int id;
-        private final int block;
-        private final Socket source;
-        private final DataOutputStream dataOutputStream;
-        private final DataInputStream dataInputStream;
+        private final Set<Integer> wantedBlocks;
+        private final InetSocketAddress sourceAddress;
 
-        DownloadTask(ClientsInfo.ClientInfo clientInfo, int id, int block) throws IOException {
+        private DataOutputStream dataOutputStream;
+        private DataInputStream dataInputStream;
+
+        DownloadTask(InetSocketAddress sourceAddress, int id, Set<Integer> wantedBlocks) throws IOException {
             this.id = id;
-            this.block = block;
-            source = new Socket(InetAddress.getByAddress(clientInfo.ip), clientInfo.port);
-            dataOutputStream = new DataOutputStream(source.getOutputStream());
-            dataInputStream = new DataInputStream(source.getInputStream());
+            this.wantedBlocks = wantedBlocks;
+            this.sourceAddress = sourceAddress;
         }
 
         @Override
         public void run() {
+            Socket source = null;
             try {
-                Collection<Integer> blocks = execStat(id);
-                if (!downloadedBlocks.contains(block) && blocks.contains(block)) {
-                    execGetAndStore(id, block, file);
-                    downloadedBlocks.add(block);
-                    Notification.downloaded(id, block);
+                source = new Socket(sourceAddress.getHostName(), sourceAddress.getPort());
+                dataInputStream = new DataInputStream(source.getInputStream());
+                dataOutputStream = new DataOutputStream(source.getOutputStream());
+                Collection<Integer> availableBlocks = execStat(id);
+                synchronized (wantedBlocks) {
+                    Iterator<Integer> iterator = wantedBlocks.iterator();
+                    while (iterator.hasNext()) {
+                        Integer part = iterator.next();
+                        if (availableBlocks.contains(part)) {
+                            execGetAndStore(id, part, file);
+                            Notification.downloaded(id, part);
+                            iterator.remove();
+                        }
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();

@@ -3,6 +3,7 @@ package torrent.tracker;
 import torrent.ArgsAndConsts;
 
 import java.io.*;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,11 +14,10 @@ public class FilesRegister {
 
     private static final String registerName = "files register";
 
-    private int nextId;
-    private final Map<Integer, FileInfo> register;
+    private int nextId = 0;
+    private final Map<Integer, FileInfo> register = Collections.synchronizedMap(new HashMap<>());
 
     public FilesRegister() throws IOException {
-        register = new HashMap<>();
         File registerFile = ArgsAndConsts.RESOURCES.resolve(registerName).toFile();
         try (DataInputStream dataInputStream = new DataInputStream(new FileInputStream(registerFile))) {
             nextId = dataInputStream.readInt();
@@ -31,7 +31,7 @@ public class FilesRegister {
         }
     }
 
-    synchronized Map<Integer, FileInfo> getRegister() {
+    Map<Integer, FileInfo> getRegister() {
         return register;
     }
 

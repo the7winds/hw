@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 
 class ClientsHandler {
@@ -32,7 +33,7 @@ class ClientsHandler {
                 executorService.execute(clientHandler);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            Logger.getGlobal().info(e.getMessage());
         }
     };
 
@@ -89,7 +90,7 @@ class ClientsHandler {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                Logger.getGlobal().info(e.getMessage());
             }
         }
 

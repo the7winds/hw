@@ -3,11 +3,15 @@ package torrent.tracker;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
+
+import static torrent.ArgsAndConsts.TRACKER_PORT;
 
 
 /**
@@ -18,28 +22,29 @@ import java.util.concurrent.TimeUnit;
 
 public class TrackerImpl {
 
-    public static final int BLOCK_SIZE = 10 * (1 << 20); // 10 MB
-    public static final short TRACKER_PORT = 8081;
-
+    // stores information about uploaded files
     private FilesRegister filesRegister;
+    // stores information about who contains some parts
     private ClientsInfo clientsInfo;
 
+    // server fields
     private ServerSocket serverSocket;
     private List<Socket> acceptedSockets;
 
     private ExecutorService executorService;
 
+    // accepts new connections
     private final Runnable acceptor = () -> {
         try {
             while (!serverSocket.isClosed()) {
                 Socket socket = serverSocket.accept();
                 acceptedSockets.add(socket);
-                TorrentHandler torrentHandler = new TorrentHandler(socket, filesRegister, clientsInfo);
-                Notifications.accepted(socket);
-                executorService.execute(torrentHandler);
+                ClientHandler clientHandler = new ClientHandler(socket, filesRegister, clientsInfo);
+                Logger.getGlobal().info(String.format("%s: ACCEPTED", socket.getInetAddress().toString()));
+                executorService.execute(clientHandler);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            Logger.getGlobal().info(e.getMessage());
         }
     };
 
@@ -52,6 +57,7 @@ public class TrackerImpl {
     /** starts tracker */
 
     public void start() {
+        Logger.getGlobal().info("START TRACKER");
         acceptedSockets = new LinkedList<>();
         executorService = Executors.newCachedThreadPool();
         executorService.submit(acceptor);

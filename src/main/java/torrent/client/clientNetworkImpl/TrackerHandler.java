@@ -1,6 +1,5 @@
 package torrent.client.clientNetworkImpl;
 
-import torrent.tracker.ClientsInfo;
 import torrent.tracker.FilesRegister;
 import torrent.tracker.protocol.List;
 import torrent.tracker.protocol.Sources;
@@ -10,6 +9,7 @@ import torrent.tracker.protocol.Upload;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Collection;
 import java.util.Map;
@@ -17,8 +17,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
+import static torrent.ArgsAndConsts.TRACKER_PORT;
 import static torrent.ArgsAndConsts.port;
-import static torrent.tracker.TrackerImpl.TRACKER_PORT;
 
 
 class TrackerHandler {
@@ -58,14 +58,14 @@ class TrackerHandler {
         new List.Request().write(clientTrackerDataOutputStream);
         List.Answer answer = new List.Answer();
         answer.read(clientTrackerDataInputStream);
-        return answer.getFileInfos();
+        return answer.getFiles();
     }
 
-    synchronized Collection<ClientsInfo.ClientInfo> execSources(int id) throws IOException {
+    synchronized Collection<InetSocketAddress> execSources(int id) throws IOException {
         new Sources.Request(id).write(clientTrackerDataOutputStream);
         Sources.Answer answer = new Sources.Answer();
         answer.read(clientTrackerDataInputStream);
-        return answer.getClientInfoList();
+        return answer.getSources();
     }
 
     synchronized int execUpload(String name, long size) throws IOException {

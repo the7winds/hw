@@ -22,23 +22,23 @@ public final class Update {
     public static class Request implements Sendable {
 
         private short port;
-        private Collection<Integer> ids;
+        private Collection<Integer> filesIds;
 
         public Request() {
         }
 
-        public Request(short port, Collection<Integer> ids) {
+        public Request(short port, Collection<Integer> filesIds) {
             this.port = port;
-            this.ids = ids;
+            this.filesIds = filesIds;
         }
 
         @Override
         public void read(DataInputStream dataInputStream) throws IOException {
-            ids = new LinkedList<>();
+            filesIds = new LinkedList<>();
             port = dataInputStream.readShort();
             int count = dataInputStream.readInt();
             for (int i = 0; i < count; ++i) {
-                ids.add(dataInputStream.readInt());
+                filesIds.add(dataInputStream.readInt());
             }
         }
 
@@ -46,8 +46,8 @@ public final class Update {
         public void write(DataOutputStream dataOutputStream) throws IOException {
             dataOutputStream.writeByte(TAG);
             dataOutputStream.writeShort(port);
-            dataOutputStream.writeInt(ids.size());
-            for (int id : ids) {
+            dataOutputStream.writeInt(filesIds.size());
+            for (int id : filesIds) {
                 dataOutputStream.writeInt(id);
             }
             dataOutputStream.flush();
@@ -57,8 +57,8 @@ public final class Update {
             return port;
         }
 
-        public Collection<Integer> getIds() {
-            return ids;
+        public Collection<Integer> getFilesIds() {
+            return filesIds;
         }
     }
 

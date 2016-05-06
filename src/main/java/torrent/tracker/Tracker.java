@@ -20,7 +20,6 @@ public class Tracker {
     }
 
     public void main() throws IOException, InterruptedException {
-        Notifications.start();
 
         tracker = new TrackerImpl();
         tracker.start();

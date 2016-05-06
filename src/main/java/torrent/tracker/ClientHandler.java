@@ -7,17 +7,17 @@ import torrent.tracker.protocol.Upload;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
-
+import java.util.logging.Logger;
 
 
 /**
@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 /** Handler which works with one client */
 
-public class TorrentHandler implements Runnable {
+class ClientHandler implements Runnable {
 
     private final Socket socket;
     private final DataInputStream dataInputStream;
@@ -35,36 +35,16 @@ public class TorrentHandler implements Runnable {
     private final ClientsInfo clientsInfo;
 
     /** in minutes */
-    private final long WAITING_UPDATE_TIMEOUT = 5;
-    private Timer waitingUpdateTimeout;
-    private Map<InetSocketAddress, RemoveFromTrackerTask> addressToTask = new HashMap<>();
-    private class RemoveFromTrackerTask extends TimerTask {
-
-        private byte[] ip;
-        private short port;
-
-        RemoveFromTrackerTask(byte[] ip, short port) {
-            this.ip = ip;
-            this.port = port;
-        }
-
-        @Override
-        public void run() {
-            try {
-                Notifications.removeClient(ip, port);
-                clientsInfo.removeClient(ip, port);
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-            }
-        }
-    }
+    private static final int WAITING_UPDATE_TIMEOUT = 5;
+    private final Timer waitingUpdateTimeout = new Timer();
+    private final Map<InetSocketAddress, TimerTask> addressToTask = new HashMap<>();
 
 
-    TorrentHandler(Socket socket, FilesRegister filesRegister, ClientsInfo clientsInfo) throws IOException {
+    ClientHandler(Socket socket, FilesRegister filesRegister, ClientsInfo clientsInfo) throws IOException {
         this.socket = socket;
         this.filesRegister = filesRegister;
         this.clientsInfo = clientsInfo;
-        waitingUpdateTimeout = new Timer();
+
         dataInputStream = new DataInputStream(socket.getInputStream());
         dataOutputStream = new DataOutputStream(socket.getOutputStream());
     }
@@ -76,39 +56,39 @@ public class TorrentHandler implements Runnable {
                 byte requestTag = dataInputStream.readByte();
                 switch (requestTag) {
                     case 1:
-                        Notifications.listGet(socket);
+                        Logger.getGlobal().finest(String.format("%s: LIST REQUEST GET\n", socket.toString()));
                         List.Request listRequest = new List.Request();
                         listRequest.read(dataInputStream);
                         handleRequest();
-                        Notifications.listDone(socket);
+                        Logger.getGlobal().finest(String.format("%s: LIST REQUEST DONE\n", socket.toString()));
                         break;
                     case 2:
-                        Notifications.uploadGet(socket);
+                        Logger.getGlobal().finest(String.format("%s: UPLOAD REQUEST\n", socket.toString()));
                         Upload.Request uploadRequest = new Upload.Request();
                         uploadRequest.read(dataInputStream);
                         handleRequest(uploadRequest);
-                        Notifications.uploadDone(socket);
+                        Logger.getGlobal().finest(String.format("%s: UPLOAD REQUEST DONE\n", socket.toString()));
                         break;
                     case 3:
-                        Notifications.sourcesGet(socket);
+                        Logger.getGlobal().finest(String.format("%s: SOURCES REQUEST\n", socket.toString()));
                         Sources.Request sourcesRequest = new Sources.Request();
                         sourcesRequest.read(dataInputStream);
                         handleRequest(sourcesRequest);
-                        Notifications.sourcesDone(socket);
+                        Logger.getGlobal().finest(String.format("%s: SOURCES REQUEST DONE\n", socket.toString()));
                         break;
                     case 4:
-                        Notifications.updateGet(socket);
+                        Logger.getGlobal().finest(String.format("%s: UPDATE REQUEST\n", socket.toString()));
                         Update.Request updateRequest = new Update.Request();
                         updateRequest.read(dataInputStream);
                         handleRequest(updateRequest);
-                        Notifications.updateDone(socket);
+                        Logger.getGlobal().finest(String.format("%s: UPDATE REQUEST DONE\n", socket.toString()));
                         break;
                     default:
                         throw new UnsupportedOperationException("Unsupported tag was received");
                 }
             }
-        } catch (IOException  e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+            Logger.getGlobal().info(e.getMessage());
         }
     }
 
@@ -125,20 +105,27 @@ public class TorrentHandler implements Runnable {
     }
 
     private void handleRequest(Update.Request request) throws IOException {
-        short port = request.getPort();
-        byte[] ip = socket.getInetAddress().getAddress();
+        final short port = request.getPort();
+        final byte[] ip = socket.getInetAddress().getAddress();
 
-        InetSocketAddress address = new InetSocketAddress(Inet4Address.getByAddress(ip), port);
+        final InetSocketAddress address = new InetSocketAddress(Inet4Address.getByAddress(ip), port);
 
         if (addressToTask.get(address) != null) {
             addressToTask.get(address).cancel();
             waitingUpdateTimeout.purge();
         }
 
-        RemoveFromTrackerTask removeFromTrackerTask = new RemoveFromTrackerTask(ip, port);
+        TimerTask removeFromTrackerTask = new TimerTask() {
+            @Override
+            public void run() {
+                Logger.getGlobal().finest("client removed from tracker list");
+                clientsInfo.removeClient(address);
+            }
+        };
+
         addressToTask.put(address, removeFromTrackerTask);
 
-        clientsInfo.addClient(ip, port, request.getIds());
+        clientsInfo.addClient(address, request.getFilesIds());
         waitingUpdateTimeout.schedule(removeFromTrackerTask, TimeUnit.MINUTES.toMillis(WAITING_UPDATE_TIMEOUT));
 
         new Update.Answer(true).write(dataOutputStream);

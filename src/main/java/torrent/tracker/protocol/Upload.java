@@ -11,7 +11,7 @@ import java.io.IOException;
  */
 public final class Upload {
 
-    public static final byte TAG = 2;
+    private static final byte TAG = 2;
 
     private Upload() {
         throw new UnsupportedOperationException();

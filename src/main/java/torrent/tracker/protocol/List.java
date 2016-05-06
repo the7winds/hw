@@ -38,40 +38,42 @@ public final class List {
 
     public static class Answer implements Sendable {
 
-        private Map<Integer, FileInfo> fileInfos;
+        private Map<Integer, FileInfo> files;
 
         public Answer() {
         }
 
-        public Answer(Map<Integer, FileInfo> fileInfos) {
-            this.fileInfos = fileInfos;
+        public Answer(Map<Integer, FileInfo> files) {
+            this.files = files;
         }
 
         @Override
         public void read(DataInputStream dataInputStream) throws IOException {
-            fileInfos = new HashMap<>();
+            files = new HashMap<>();
             int count = dataInputStream.readInt();
             for (int i = 0; i < count; ++i) {
                 int id = dataInputStream.readInt();
                 String name = dataInputStream.readUTF();
                 long size = dataInputStream.readLong();
-                fileInfos.put(id, new FileInfo(id, name, size));
+                files.put(id, new FileInfo(id, name, size));
             }
         }
 
         @Override
         public void write(DataOutputStream dataOutputStream) throws IOException {
-            dataOutputStream.writeInt(fileInfos.size());
-            for (FileInfo fileInfo : fileInfos.values()) {
-                dataOutputStream.writeInt(fileInfo.id);
-                dataOutputStream.writeUTF(fileInfo.name);
-                dataOutputStream.writeLong(fileInfo.size);
+            synchronized (files) {
+                dataOutputStream.writeInt(files.size());
+                for (FileInfo fileInfo : files.values()) {
+                    dataOutputStream.writeInt(fileInfo.id);
+                    dataOutputStream.writeUTF(fileInfo.name);
+                    dataOutputStream.writeLong(fileInfo.size);
+                }
+                dataOutputStream.flush();
             }
-            dataOutputStream.flush();
         }
 
-        public Map<Integer, FileInfo> getFileInfos() {
-            return fileInfos;
+        public Map<Integer, FileInfo> getFiles() {
+            return files;
         }
     }
 }

@@ -1,11 +1,12 @@
 package torrent.tracker.protocol;
 
 import torrent.Sendable;
-import torrent.tracker.ClientsInfo.ClientInfo;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -50,39 +51,39 @@ public final class Sources {
 
     public static class Answer implements Sendable {
 
-        private Collection<ClientInfo> clientInfoList;
+        private Collection<InetSocketAddress> sources;
 
         public Answer() {
         }
 
-        public Answer(Collection<ClientInfo> clientInfoList) {
-            this.clientInfoList = clientInfoList;
+        public Answer(Collection<InetSocketAddress> sources) {
+            this.sources = sources;
         }
 
         @Override
         public void read(DataInputStream dataInputStream) throws IOException {
-            clientInfoList = new LinkedList<>();
+            sources = new LinkedList<>();
             int size = dataInputStream.readInt();
             for (int i = 0; i < size; ++i) {
                 byte[] ip = new byte[4];
                 dataInputStream.readFully(ip);
                 short port = dataInputStream.readShort();
-                clientInfoList.add(new ClientInfo(ip, port));
+                sources.add(new InetSocketAddress(InetAddress.getByAddress(ip), port));
             }
         }
 
         @Override
         public void write(DataOutputStream dataOutputStream) throws IOException {
-            dataOutputStream.writeInt(clientInfoList.size());
-            for (ClientInfo clientInfo : clientInfoList) {
-                dataOutputStream.write(clientInfo.ip);
-                dataOutputStream.writeShort(clientInfo.port);
+            dataOutputStream.writeInt(sources.size());
+            for (InetSocketAddress clientInfo : sources) {
+                dataOutputStream.write(clientInfo.getAddress().getAddress(), 0, 4);
+                dataOutputStream.writeShort(clientInfo.getPort());
             }
             dataOutputStream.flush();
         }
 
-        public Collection<ClientInfo> getClientInfoList() {
-            return clientInfoList;
+        public Collection<InetSocketAddress> getSources() {
+            return sources;
         }
     }
 }

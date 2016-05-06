@@ -2,7 +2,8 @@ package torrent.client.clientNetworkImpl;
 
 import torrent.client.ClientNetwork;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -15,7 +16,7 @@ public class ClientNetworkImpl implements ClientNetwork {
     private final TrackerHandler trackerHandler;
     private final ClientsHandler clientsHandler;
     private final AvailablePartsProvider availablePartsProvider;
-    private Executor downloads;
+    private Executor downloadsExecutor;
 
     public ClientNetworkImpl(short port) throws IOException {
         availablePartsProvider = new AvailablePartsProvider();
@@ -27,7 +28,7 @@ public class ClientNetworkImpl implements ClientNetwork {
     public void connect(String trackerAddress) throws IOException {
         trackerHandler.connect(trackerAddress);
         clientsHandler.start();
-        downloads = Executors.newCachedThreadPool();
+        downloadsExecutor = Executors.newCachedThreadPool();
     }
 
     @Override
@@ -41,7 +42,7 @@ public class ClientNetworkImpl implements ClientNetwork {
             FileInfo fileInfo = trackerHandler.execList().get(id);
             if (fileInfo != null) {
                 DownloadStatus status = new DownloadStatus();
-                downloads.execute(new DownloadHandler(this, status, fileInfo, pathname));
+                downloadsExecutor.execute(new DownloadHandler(this, status, fileInfo, pathname));
                 return status;
             }
         } catch (IOException e) {
@@ -70,8 +71,8 @@ public class ClientNetworkImpl implements ClientNetwork {
         return trackerHandler;
     }
 
-    Executor getDownloads() {
-        return downloads;
+    Executor getDownloadsExecutor() {
+        return downloadsExecutor;
     }
 
     AvailablePartsProvider getAvailablePartsProvider() {
