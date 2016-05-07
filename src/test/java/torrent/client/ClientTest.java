@@ -70,10 +70,10 @@ public class ClientTest {
         downloader.connect(host);
 
         File file = TEST_RESOURCES.resolve("2.txt").toFile();
-        Path dest = TEST_RESOURCES.resolve("download.txt");
+        File dest = TEST_RESOURCES.resolve("download.txt").toFile();
 
         int id = loader.upload(file);
-        DownloadStatus status = downloader.download(id, dest.toString());
+        DownloadStatus status = downloader.download(id, dest);
 
         while (!status.isDownloaded());
 
@@ -81,7 +81,7 @@ public class ClientTest {
         loader.disconnect();
         trackerImpl.stop();
 
-        assertTrue(com.google.common.io.Files.equal(file, dest.toFile()));
+        assertTrue(com.google.common.io.Files.equal(file, dest));
     }
 
     @Test
@@ -94,11 +94,11 @@ public class ClientTest {
         loader.connect(host);
         downloader.connect(host);
 
-        Path dest = TEST_RESOURCES.resolve("download.txt");
         File file = TEST_RESOURCES.resolve("3.txt").toFile();
+        File dest = TEST_RESOURCES.resolve("download.txt").toFile();
 
         int id = loader.upload(file);
-        DownloadStatus downloadStatus = downloader.download(id, dest.toString());
+        DownloadStatus downloadStatus = downloader.download(id, dest);
 
         while (!downloadStatus.isDownloaded());
 
@@ -106,6 +106,6 @@ public class ClientTest {
         loader.disconnect();
         trackerImpl.stop();
 
-        assertTrue(com.google.common.io.Files.equal(file, dest.toFile()));
+        assertTrue(com.google.common.io.Files.equal(file, dest));
     }
 }
