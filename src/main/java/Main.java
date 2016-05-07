@@ -2,8 +2,10 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import torrent.ArgsAndConsts;
 import torrent.client.Client;
+import torrent.client.gui.TorrentFrame;
 import torrent.tracker.Tracker;
 
+import javax.swing.*;
 import java.io.IOException;
 
 /**
@@ -16,7 +18,7 @@ public class Main {
     private static final String ERROR_MESSAGE = "wrong mode";
 
     public static void main(String[] args) throws CmdLineException, IOException, InterruptedException {
-        final CmdLineParser parser = new CmdLineParser(new ArgsAndConsts());
+       final CmdLineParser parser = new CmdLineParser(new ArgsAndConsts());
         parser.parseArgument(args);
 
         switch (ArgsAndConsts.mode) {

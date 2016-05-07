@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import static torrent.ArgsAndConsts.BLOCK_SIZE;
 import static torrent.tracker.FilesRegister.FileInfo;
 
 
@@ -37,12 +38,12 @@ public class ClientNetworkImpl implements ClientNetwork {
     }
 
     @Override
-    public DownloadStatus download(int id, String pathname) {
+    public DownloadStatus download(int id, File file) {
         try {
             FileInfo fileInfo = trackerHandler.execList().get(id);
             if (fileInfo != null) {
-                DownloadStatus status = new DownloadStatus();
-                downloadsExecutor.execute(new DownloadHandler(this, status, fileInfo, pathname));
+                DownloadStatus status = new DownloadStatus(fileInfo);
+                downloadsExecutor.execute(new DownloadHandler(this, status, fileInfo, file));
                 return status;
             }
         } catch (IOException e) {
@@ -61,7 +62,7 @@ public class ClientNetworkImpl implements ClientNetwork {
     }
 
     @Override
-    public void disconnect() throws IOException {
+    public void disconnect() {
         trackerHandler.disconnect();
         clientsHandler.stop();
         availablePartsProvider.store();

@@ -7,7 +7,10 @@ import torrent.tracker.FilesRegister;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -25,11 +28,11 @@ class DownloadHandler implements Runnable {
     private final Set<Integer> wantedBlocks;
     private final DownloadStatus status;
 
-    DownloadHandler(ClientNetworkImpl client, DownloadStatus status, FilesRegister.FileInfo fileInfo, String pathname) {
+    DownloadHandler(ClientNetworkImpl client, DownloadStatus status, FilesRegister.FileInfo fileInfo, File file) {
         this.client = client;
         this.fileInfo = fileInfo;
         this.status = status;
-        file = new File(pathname);
+        this.file = file;
         wantedBlocks = Collections.synchronizedSet(getWantedBlocks());
     }
 
@@ -42,6 +45,7 @@ class DownloadHandler implements Runnable {
                 rFile.setLength(fileInfo.size);
             }
 
+            int blocks = wantedBlocks.size();
             while (!wantedBlocks.isEmpty()) {
                 Collection<InetSocketAddress> sources = client.getTrackerHandler().execSources(fileInfo.id);
                 for (InetSocketAddress clientInfo : sources) {
@@ -55,6 +59,7 @@ class DownloadHandler implements Runnable {
                         e.printStackTrace();
                     }
                 }
+                status.update(blocks - wantedBlocks.size());
             }
             status.downloaded();
             Notification.downloaded();

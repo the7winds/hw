@@ -1,12 +1,17 @@
 package torrent.client;
 
 import torrent.ArgsAndConsts;
+import torrent.client.clientNetworkImpl.DownloadStatus;
+import torrent.client.gui.TorrentFrame;
 import torrent.tracker.FilesRegister;
 
+import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.*;
+import java.util.Timer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by the7winds on 09.04.16.
@@ -15,13 +20,9 @@ public class Client {
 
     private static final Client INSTANCE = new Client();
 
-    private static final String CMD_ERR_MESSAGE = "unknown command";
-    private static final String LIST_CMD = "ls";
-    private static final String UPLOAD_CMD = "add";
-    private static final String DOWNLOAD_CMD = "ld";
-    private static final String QUIT_CMD = "q";
-
     private ClientNetwork clientNetwork;
+    private TorrentFrame torrentFrame;
+    private ExecutorService executor = Executors.newCachedThreadPool();
 
     private Client() {
     }
@@ -30,58 +31,69 @@ public class Client {
         return INSTANCE;
     }
 
-    public void main() throws IOException {
-        clientNetwork = new torrent.client.clientNetworkImpl.ClientNetworkImpl(ArgsAndConsts.port);
-        clientNetwork.connect(ArgsAndConsts.host);
-
-        while (true) {
-            String line = System.console().readLine();
-            String[] words = line.split("\\s");
-            String cmd = words[0];
-            String[] cmdArgs = Arrays.copyOfRange(words, 1, words.length);
-
-            switch (cmd) {
-                case LIST_CMD:
-                    listHandle();
-                    break;
-                case UPLOAD_CMD:
-                    uploadHandle(cmdArgs);
-                    break;
-                case DOWNLOAD_CMD:
-                    downloadHandle(cmdArgs);
-                    break;
-                case QUIT_CMD:
-                    clientNetwork.disconnect();
-                    return;
-                default:
-                    System.out.println(CMD_ERR_MESSAGE);
-            }
+    private Timer timer = new Timer(true);
+    private TimerTask listDaemon = new TimerTask() {
+        @Override
+        public void run() {
+            listHandle();
         }
+    };
+
+
+    public void main() throws IOException {
+        torrentFrame = new TorrentFrame();
+        SwingUtilities.invokeLater(() -> torrentFrame.setVisible(true));
+
+        execute(() -> {
+            try {
+                clientNetwork = new torrent.client.clientNetworkImpl.ClientNetworkImpl(ArgsAndConsts.port);
+                clientNetwork.connect(ArgsAndConsts.host);
+                timer.schedule(listDaemon, 0, 1000);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
-    void listHandle() {
+    private void listHandle() {
         try {
             Collection<FilesRegister.FileInfo> list = clientNetwork.list();
-            System.out.printf("ID\tNAME\tSIZE\n");
-            for (FilesRegister.FileInfo info : list) {
-                System.out.printf("%d\t%s\t%d\n", info.id, info.name, info.size);
-            }
+            torrentFrame.updateList(list);
         } catch (IOException e) {
             System.out.printf(e.getMessage());
         }
     }
 
-    void uploadHandle(String[] cmdArgs) {
+    public void uploadHandle(File file) {
         try {
-            clientNetwork.upload(new File(cmdArgs[0]));
+            clientNetwork.upload(file);
         } catch (IOException e) {
             System.out.printf(e.getMessage());
         }
     }
 
-    void downloadHandle(String[] cmdArgs) {
-        int id = Integer.valueOf(cmdArgs[0]);
-        String pathname = cmdArgs[1];
-        clientNetwork.download(id, pathname);
+    public void downloadHandle(int id, String name, File destDir) {
+        File file = destDir.toPath()
+                .resolve(name)
+                .toFile();
+        final DownloadStatus downloadStatus = clientNetwork.download(id, file);
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                torrentFrame.updateDownloadStatus(downloadStatus);
+                if (downloadStatus.isDownloaded()) {
+                    cancel();
+                }
+            }
+        }, 0, 100);
+    }
+
+    public void disconnect() {
+        clientNetwork.disconnect();
+        executor.shutdownNow();
+    }
+
+    public void execute(Runnable r) {
+        executor.execute(r);
     }
 }

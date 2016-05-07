@@ -22,7 +22,7 @@ class ClientsHandler {
     private final ExecutorService executorService = Executors.newCachedThreadPool();
     private ClientNetworkImpl client;
 
-    private java.util.List<Socket> acceptedSockets;
+    private java.util.List<Socket> acceptedSockets = Collections.synchronizedList(new LinkedList<>());
 
     private final Runnable acceptor = () -> {
         try {
@@ -43,16 +43,26 @@ class ClientsHandler {
     }
 
     void start() throws IOException {
-        acceptedSockets = Collections.synchronizedList(new LinkedList<>());
         serverSocket = new ServerSocket(port);
         executorService.execute(acceptor);
     }
 
-    void stop() throws IOException {
-        for (Socket socket : acceptedSockets) {
-            socket.close();
+    void stop() {
+        try {
+            if (serverSocket != null) {
+                serverSocket.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        serverSocket.close();
+        for (Socket socket : acceptedSockets) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        executorService.shutdownNow();
     }
 
     private static class ClientHandler implements Runnable {

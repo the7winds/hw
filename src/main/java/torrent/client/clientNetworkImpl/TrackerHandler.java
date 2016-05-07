@@ -82,7 +82,14 @@ class TrackerHandler {
         return answer.getStatus();
     }
 
-    void disconnect() throws IOException {
-        clientTrackerSocket.close();
+    void disconnect() {
+        if (clientTrackerSocket != null) {
+            try {
+                clientTrackerSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        updateTimer.cancel();
     }
 }

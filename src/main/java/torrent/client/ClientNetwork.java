@@ -16,9 +16,9 @@ public interface ClientNetwork {
 
     Collection<FilesRegister.FileInfo> list() throws IOException;
 
-    DownloadStatus download(int id, String pathname);
+    DownloadStatus download(int id, File file);
 
     int upload(File file) throws IOException;
 
-    void disconnect() throws IOException;
+    void disconnect();
 }

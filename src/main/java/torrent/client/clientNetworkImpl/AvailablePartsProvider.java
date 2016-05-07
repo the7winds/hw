@@ -92,20 +92,24 @@ class AvailablePartsProvider {
         }
     }
 
-    void store() throws IOException {
-        File registerFile = ArgsAndConsts.RESOURCES.resolve(registerFilename).toFile();
-        registerFile.createNewFile();
-        try (DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(registerFile))) {
-            for (AvailablePartsInfo entry : register.values()) {
-                dataOutputStream.writeInt(entry.id);
-                dataOutputStream.writeUTF(entry.file.getName());
-                dataOutputStream.writeUTF(entry.file.getPath());
+    void store() {
+        try {
+            File registerFile = ArgsAndConsts.RESOURCES.resolve(registerFilename).toFile();
+            registerFile.createNewFile();
+            try (DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(registerFile))) {
+                for (AvailablePartsInfo entry : register.values()) {
+                    dataOutputStream.writeInt(entry.id);
+                    dataOutputStream.writeUTF(entry.file.getName());
+                    dataOutputStream.writeUTF(entry.file.getPath());
 
-                dataOutputStream.writeInt(entry.availableParts.size());
-                for (Integer part : entry.availableParts) {
-                    dataOutputStream.writeInt(part);
+                    dataOutputStream.writeInt(entry.availableParts.size());
+                    for (Integer part : entry.availableParts) {
+                        dataOutputStream.writeInt(part);
+                    }
                 }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
