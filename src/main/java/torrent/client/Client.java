@@ -85,7 +85,7 @@ public class Client {
                     cancel();
                 }
             }
-        }, 0, 100);
+        }, 0, 10);
     }
 
     public void disconnect() {

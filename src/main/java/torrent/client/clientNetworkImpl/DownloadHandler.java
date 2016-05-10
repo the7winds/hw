@@ -11,7 +11,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -45,21 +44,11 @@ class DownloadHandler implements Runnable {
                 rFile.setLength(fileInfo.size);
             }
 
-            int blocks = wantedBlocks.size();
             while (!wantedBlocks.isEmpty()) {
                 Collection<InetSocketAddress> sources = client.getTrackerHandler().execSources(fileInfo.id);
                 for (InetSocketAddress clientInfo : sources) {
-                    client.getDownloadsExecutor().execute(new DownloadTask(clientInfo, fileInfo.id, wantedBlocks));
+                    client.getDownloadsExecutor().execute(new DownloadTask(clientInfo, fileInfo.id, wantedBlocks, status));
                 }
-
-                synchronized (this) {
-                    try {
-                        Thread.currentThread().sleep(TimeUnit.SECONDS.toMillis(1));
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                status.update(blocks - wantedBlocks.size());
             }
             status.downloaded();
             Notification.downloaded();
@@ -84,10 +73,13 @@ class DownloadHandler implements Runnable {
         private DataOutputStream dataOutputStream;
         private DataInputStream dataInputStream;
 
-        DownloadTask(InetSocketAddress sourceAddress, int id, Set<Integer> wantedBlocks) throws IOException {
+        private final DownloadStatus status;
+
+        DownloadTask(InetSocketAddress sourceAddress, int id, Set<Integer> wantedBlocks, DownloadStatus status) throws IOException {
             this.id = id;
             this.wantedBlocks = wantedBlocks;
             this.sourceAddress = sourceAddress;
+            this.status = status;
         }
 
         @Override
@@ -104,8 +96,9 @@ class DownloadHandler implements Runnable {
                         Integer part = iterator.next();
                         if (availableBlocks.contains(part)) {
                             execGetAndStore(id, part, file);
-                            Notification.downloaded(id, part);
                             iterator.remove();
+                            status.update(status.getBlocks() - wantedBlocks.size());
+                            Notification.downloaded(id, part);
                         }
                     }
                 }
