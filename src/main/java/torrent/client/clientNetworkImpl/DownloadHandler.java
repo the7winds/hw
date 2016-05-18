@@ -134,6 +134,7 @@ class DownloadHandler implements Runnable {
                 rFile.seek(part * BLOCK_SIZE);
                 rFile.write(content, 0, dataLen);
                 client.getAvailablePartsProvider().addPart(id, part, dest);
+                client.getAvailablePartsProvider().store();
                 client.getTrackerHandler().execUpdate();
             }
         }

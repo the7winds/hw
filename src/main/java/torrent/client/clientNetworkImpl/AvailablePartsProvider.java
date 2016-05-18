@@ -10,6 +10,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static torrent.ArgsAndConsts.BLOCK_SIZE;
+import static torrent.ArgsAndConsts.RESOURCES;
 
 /**
  * Created by the7winds on 27.03.16.
@@ -21,8 +22,9 @@ class AvailablePartsProvider {
 
     AvailablePartsProvider() throws IOException {
         try {
-            DataInput registerDataInput = new DataInputStream(new FileInputStream(registerFilename));
-            while (true) {
+            DataInput registerDataInput = new DataInputStream(new FileInputStream(RESOURCES.resolve(registerFilename).toFile()));
+            int N = registerDataInput.readInt();
+            for (int k = 0; k < N; ++k) {
                 int id = registerDataInput.readInt();
                 String name = registerDataInput.readUTF();
                 String pathname = registerDataInput.readUTF();
@@ -60,7 +62,7 @@ class AvailablePartsProvider {
     }
 
     synchronized void addPart(int id, int part, File dest) throws IOException {
-        register.getOrDefault(id, new AvailablePartsInfo(id, dest.getName(), dest)).availableParts.add(part);
+        register.computeIfAbsent(id, k -> new AvailablePartsInfo(id, dest.getName(), dest)).availableParts.add(part);
     }
 
     synchronized void addFile(int id, File file) throws IOException {
@@ -95,8 +97,8 @@ class AvailablePartsProvider {
     void store() {
         try {
             File registerFile = ArgsAndConsts.RESOURCES.resolve(registerFilename).toFile();
-            registerFile.createNewFile();
             try (DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(registerFile))) {
+                dataOutputStream.writeInt(register.size());
                 for (AvailablePartsInfo entry : register.values()) {
                     dataOutputStream.writeInt(entry.id);
                     dataOutputStream.writeUTF(entry.file.getName());
